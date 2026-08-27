@@ -19,7 +19,7 @@ export default function PublicPage() {
         const { data: inst, error: instError } = await supabase
           .from('institutions')
           .select('id, name')
-          .eq('public_slug', code)
+          .eq('public_slug', code.toLowerCase())
           .eq('status', 'active')
           .eq('public_score_enabled', true)
           .single();
