@@ -97,6 +97,11 @@ export const apiClient = async (endpoint, options = {}) => {
         if (error) throw error;
         return { success: true };
       }
+      if (method === 'PUT') {
+        const { data, error } = await supabase.from('teams').update(body).eq('id', id).select().single();
+        if (error) throw error;
+        return data;
+      }
     }
 
     // /results
