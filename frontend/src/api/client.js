@@ -104,6 +104,30 @@ export const apiClient = async (endpoint, options = {}) => {
       }
     }
 
+    // /items
+    if (endpoint === '/items') {
+      const profile = await ensureAuth();
+      const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+      
+      if (method === 'GET') {
+        const { data, error } = await supabase.from('items').select('*').eq('institution_id', instId).order('name', { ascending: true });
+        if (error) throw error;
+        return data;
+      }
+    }
+
+    // /candidates
+    if (endpoint === '/candidates') {
+      const profile = await ensureAuth();
+      const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+      
+      if (method === 'GET') {
+        const { data, error } = await supabase.from('candidates').select('*').eq('institution_id', instId).order('name', { ascending: true });
+        if (error) throw error;
+        return data;
+      }
+    }
+
     // /results
     if (endpoint === '/results') {
       const profile = await ensureAuth();
