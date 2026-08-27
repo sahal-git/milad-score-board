@@ -59,37 +59,37 @@ export default function AddResult() {
     }
   };
 
-  const PositionSection = ({ title, pos, color }) => (
-    <div className={`p-5 rounded-xl border ${color} space-y-4 bg-white`}>
-      <h3 className="font-bold text-lg">{title}</h3>
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Candidate Name *</label>
-        <input
-          required
-          type="text"
-          list="candidate-suggestions"
-          className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
-          placeholder="e.g. Ahmed Faiz"
-          value={formData[`${pos}_candidate_name`]}
-          onChange={e => setFormData({...formData, [`${pos}_candidate_name`]: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Team *</label>
-        <select
-          required
-          className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg bg-white"
-          value={formData[`${pos}_team_id`]}
-          onChange={e => setFormData({...formData, [`${pos}_team_id`]: e.target.value})}
-        >
-          <option value="">Select Team</option>
-          {teams.map(team => (
-            <option key={team.id} value={team.id}>{team.name}</option>
-          ))}
-        </select>
-      </div>
+const PositionSection = ({ title, pos, color, formData, setFormData, teams }) => (
+  <div className={`p-5 rounded-xl border ${color} space-y-4 bg-white`}>
+    <h3 className="font-bold text-lg">{title}</h3>
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">Candidate Name *</label>
+      <input
+        required
+        type="text"
+        list="candidate-suggestions"
+        className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
+        placeholder="e.g. Ahmed Faiz"
+        value={formData[`${pos}_candidate_name`]}
+        onChange={e => setFormData({...formData, [`${pos}_candidate_name`]: e.target.value})}
+      />
     </div>
-  );
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">Team *</label>
+      <select
+        required
+        className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg bg-white"
+        value={formData[`${pos}_team_id`]}
+        onChange={e => setFormData({...formData, [`${pos}_team_id`]: e.target.value})}
+      >
+        <option value="">Select Team</option>
+        {teams.map(team => (
+          <option key={team.id} value={team.id}>{team.name}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -123,9 +123,9 @@ export default function AddResult() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <PositionSection title="1st Place" pos="first" color="border-amber-300 ring-1 ring-amber-100" />
-          <PositionSection title="2nd Place" pos="second" color="border-slate-300 ring-1 ring-slate-100" />
-          <PositionSection title="3rd Place" pos="third" color="border-orange-300 ring-1 ring-orange-100" />
+          <PositionSection title="1st Place" pos="first" color="border-amber-300 ring-1 ring-amber-100" formData={formData} setFormData={setFormData} teams={teams} />
+          <PositionSection title="2nd Place" pos="second" color="border-slate-300 ring-1 ring-slate-100" formData={formData} setFormData={setFormData} teams={teams} />
+          <PositionSection title="3rd Place" pos="third" color="border-orange-300 ring-1 ring-orange-100" formData={formData} setFormData={setFormData} teams={teams} />
         </div>
 
         <button 
