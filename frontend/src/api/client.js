@@ -392,6 +392,7 @@ export const apiClient = async (endpoint, options = {}) => {
           const payload = {
             name: body.name,
             code: body.code,
+            logo_url: body.logo_url || null,
             public_slug: body.code.toLowerCase(),
             admin_username: body.username,
             admin_password: body.password

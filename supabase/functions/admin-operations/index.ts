@@ -15,25 +15,37 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
     // Create a Supabase client with the Auth context of the logged in user to check their role
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing Authorization header');
     }
 
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
     
-    // Verify user is super_admin
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) throw new Error('Unauthorized');
+    const token = authHeader.replace('Bearer ', '');
     
-    const { data: profile } = await supabaseClient
+    // Verify user is super_admin
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !user) {
+      console.error("getUser error:", userError);
+      throw new Error('Unauthorized: ' + (userError?.message || 'No user'));
+    }
+    
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
+
+    if (profileError) {
+      console.error("profileError:", profileError);
+      throw new Error('Forbidden: Error fetching profile');
+    }
       
     if (profile?.role !== 'super_admin') {
       throw new Error('Forbidden: Super Admin only');
@@ -46,12 +58,12 @@ serve(async (req) => {
     const { action, payload } = body;
 
     if (action === 'create_institution') {
-      const { name, code, public_slug, admin_username, admin_password } = payload;
+      const { name, code, logo_url, public_slug, admin_username, admin_password } = payload;
       
       // 1. Create Institution
       const { data: inst, error: instError } = await adminClient
         .from('institutions')
-        .insert([{ name, code, public_slug, status: 'active' }])
+        .insert([{ name, code, logo_url, public_slug, status: 'active' }])
         .select()
         .single();
       if (instError) throw instError;
@@ -153,8 +165,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    console.error("Action error:", error);
+    return new Response(JSON.stringify({ error: error.message || error }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

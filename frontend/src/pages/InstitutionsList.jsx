@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
+import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { Settings, Plus, Search } from 'lucide-react';
 
@@ -11,6 +12,7 @@ export default function InstitutionsList() {
   
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', code: '', username: '', password: '', confirmPassword: '' });
+  const [logoFile, setLogoFile] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   
@@ -42,12 +44,23 @@ export default function InstitutionsList() {
     
     setSaving(true);
     try {
+      let logoUrl = null;
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${formData.code}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('logos').upload(fileName, logoFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName);
+        logoUrl = publicUrl;
+      }
+
       const result = await apiClient('/super/institutions', {
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, logo_url: logoUrl })
       });
       setShowModal(false);
       setFormData({ name: '', code: '', username: '', password: '', confirmPassword: '' });
+      setLogoFile(null);
       fetchInstitutions();
       navigate(`/institutions/${result.id}`);
     } catch (err) {
@@ -167,6 +180,10 @@ export default function InstitutionsList() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Admin Password *</label>
                 <input required type="password" className="w-full border border-slate-300 rounded px-3 py-2" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Logo</label>
+                <input type="file" accept="image/*" onChange={e => setLogoFile(e.target.files[0])} className="w-full text-sm" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password *</label>
