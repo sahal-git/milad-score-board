@@ -53,6 +53,8 @@ export default function AddResult() {
   const [candidates, setCandidates] = useState([]);
   const [categories, setCategories] = useState([]);
   
+  const [filterProgCat, setFilterProgCat] = useState('all');
+
   const [formData, setFormData] = useState({
     item_id: '',
     category_id: '',
@@ -118,6 +120,13 @@ export default function AddResult() {
   const selectedCategory = categories.find(c => c.id === formData.category_id);
   const selectedItem = items.find(i => i.id === formData.item_id);
 
+  // Derive available categories from items
+  const availableProgCats = [...new Set(items.map(i => i.programme_category || 'general'))];
+
+  const filteredItems = filterProgCat === 'all' 
+    ? items 
+    : items.filter(i => (i.programme_category || 'general') === filterProgCat);
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -137,31 +146,49 @@ export default function AddResult() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Filter by Age</label>
+              <select
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-lg font-medium focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                value={filterProgCat}
+                onChange={e => {
+                  setFilterProgCat(e.target.value);
+                  setFormData({...formData, item_id: ''}); // reset item selection when filter changes
+                }}
+              >
+                <option value="all">All Age Groups</option>
+                {availableProgCats.map(cat => (
+                  <option key={cat} value={cat}>{formatCategory(cat)}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="md:col-span-1">
               <label className="block text-sm font-medium text-slate-700 mb-1">Programme *</label>
               <select
                 required
-                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
                 value={formData.item_id}
                 onChange={e => setFormData({...formData, item_id: e.target.value})}
               >
                 <option value="">Select Programme</option>
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
               </select>
               {selectedItem && (
                 <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 inline-block px-2 py-1 rounded">
-                  Programme Category: {formatCategory(selectedItem.programme_category)}
+                  {formatCategory(selectedItem.programme_category)}
                 </p>
               )}
             </div>
-            <div>
+
+            <div className="md:col-span-1">
               <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>
               <select
                 required
-                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
                 value={formData.category_id}
                 onChange={e => setFormData({...formData, category_id: e.target.value})}
               >
@@ -169,7 +196,7 @@ export default function AddResult() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500 mt-2">Determines points awarded for positions.</p>
+              <p className="text-xs text-slate-500 mt-2">Determines points.</p>
             </div>
           </div>
 
