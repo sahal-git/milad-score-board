@@ -106,28 +106,61 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Category Summary */}
+        {/* Scoring Categories Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h2 className="font-semibold text-slate-800">Categories</h2>
+            <h2 className="font-semibold text-slate-800">Scoring Categories</h2>
           </div>
           <div className="p-0 divide-y divide-slate-100">
             {categories.length === 0 ? (
               <p className="p-6 text-center text-slate-500">No categories</p>
             ) : (
               categories.map(cat => {
-                const sortedByCat = [...leaderboard].sort((a, b) => (b.categoryPoints[cat.id] || 0) - (a.categoryPoints[cat.id] || 0));
-                const catTopTeam = sortedByCat.length > 0 && (sortedByCat[0].categoryPoints[cat.id] || 0) > 0 ? sortedByCat[0] : null;
+                const getPoints = (team) => team.breakdown ? team.breakdown.filter(b => b.category_id === cat.id).reduce((s, b) => s + b.points, 0) : 0;
+                const sortedByCat = [...leaderboard].sort((a, b) => getPoints(b) - getPoints(a));
+                const catTopTeam = sortedByCat.length > 0 && getPoints(sortedByCat[0]) > 0 ? sortedByCat[0] : null;
                 return (
                   <div key={cat.id} className="p-4">
                     <h3 className="font-bold text-slate-800">{cat.name}</h3>
                     <div className="flex justify-between mt-2 text-sm">
                       <span className="text-slate-500">Top Team:</span>
-                      <span className="font-medium text-indigo-600">{catTopTeam ? `${catTopTeam.name} (${catTopTeam.categoryPoints[cat.id]} pts)` : '-'}</span>
+                      <span className="font-medium text-indigo-600">{catTopTeam ? `${catTopTeam.name} (${getPoints(catTopTeam)} pts)` : '-'}</span>
                     </div>
                   </div>
                 );
               })
+            )}
+          </div>
+        </div>
+        
+        {/* Programme Categories Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1">
+          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 className="font-semibold text-slate-800">Programme Categories</h2>
+            <Link to="/events" className="text-sm text-indigo-600 font-medium hover:underline">Manage</Link>
+          </div>
+          <div className="p-0">
+            {stats.programmeCategories?.length === 0 ? (
+              <p className="p-6 text-center text-slate-500">No programmes</p>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="bg-slate-50/50 text-slate-500">
+                    <th className="p-3 font-medium">Category</th>
+                    <th className="p-3 font-medium text-right">Prog.</th>
+                    <th className="p-3 font-medium text-right">Done</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {stats.programmeCategories?.map(c => (
+                    <tr key={c.name} className="hover:bg-slate-50">
+                      <td className="p-3 font-medium text-slate-700 capitalize">{c.name.replace('_', ' ')}</td>
+                      <td className="p-3 text-right">{c.total}</td>
+                      <td className="p-3 text-right text-indigo-600 font-medium">{c.completed}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>

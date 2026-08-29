@@ -78,6 +78,7 @@ export default function EditResult() {
         setCategories(categoriesData);
         setFormData({
           item_name: resultData.item_name,
+          programme_category: resultData.programme_category,
           category_id: resultData.category_id,
           first_candidate_name: resultData.first_candidate_name || '',
           first_team_id: resultData.first_team_id || '',
@@ -120,14 +121,22 @@ export default function EditResult() {
     }
   };
 
+  const formatCategory = (cat) => cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : '';
   const selectedCategory = categories.find(c => c.id === formData.category_id);
+  const selectedItem = { name: formData.item_name, programme_category: formData.programme_category };
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading result...</div>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Edit Result</h1>
+        <button
+          onClick={() => navigate('/results')}
+          className="text-slate-500 hover:text-slate-700 font-medium text-sm"
+        >
+          Cancel
+        </button>
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">{error}</div>}
@@ -139,14 +148,15 @@ export default function EditResult() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Event Name</label>
-            <input
-              type="text"
-              disabled
-              className="w-full border border-slate-200 bg-slate-50 rounded-lg px-4 py-3 text-xl font-semibold outline-none text-slate-500"
-              value={formData.item_name}
-            />
-            <p className="text-xs text-slate-500 mt-2">Event name cannot be changed.</p>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+            <div className="w-full border border-slate-200 bg-slate-50 rounded-lg px-4 py-3 text-xl font-semibold text-slate-600">
+              {formData.item_name}
+            </div>
+            {formData.programme_category && (
+              <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 inline-block px-2 py-1 rounded">
+                Programme Category: {formatCategory(formData.programme_category)}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>

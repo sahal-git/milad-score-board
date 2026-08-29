@@ -74,9 +74,16 @@ export default function Results() {
                 filteredResults.map((result) => (
                   <tr key={result.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4">
-                      <div className="font-bold text-slate-800 text-base">{result.item_name}</div>
-                      <div className="text-xs font-semibold text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded mt-1">
-                        {result.category_name}
+                      <div className="flex flex-col space-y-1">
+                        <span className="font-semibold text-slate-800 text-base">{result.item_name}</span>
+                        <div className="flex space-x-2">
+                          <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded">
+                            {result.programme_category ? result.programme_category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'General'}
+                          </span>
+                          <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded">
+                            {result.category_name}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">

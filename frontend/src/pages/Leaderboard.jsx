@@ -2,11 +2,20 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Trophy } from 'lucide-react';
 
+const PROGRAMME_CATEGORIES = [
+  'kiddies', 'sub_junior', 'junior', 'senior', 'super_senior', 'general'
+];
+
+const formatCategory = (str) => {
+  return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterCatId, setFilterCatId] = useState('all');
+  const [filterProgCat, setFilterProgCat] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -31,12 +40,17 @@ export default function Leaderboard() {
 
   // Derive display data based on filter
   const displayBoard = [...leaderboard].map(team => {
-    let displayTotal = 0;
-    if (filterCatId === 'all') {
-      displayTotal = team.totalPoints;
-    } else {
-      displayTotal = team.categoryPoints[filterCatId] || 0;
+    let relevantBreakdown = team.breakdown;
+    
+    if (filterCatId !== 'all') {
+      relevantBreakdown = relevantBreakdown.filter(b => b.category_id === filterCatId);
     }
+    
+    if (filterProgCat !== 'all') {
+      relevantBreakdown = relevantBreakdown.filter(b => b.programme_category === filterProgCat);
+    }
+
+    const displayTotal = relevantBreakdown.reduce((sum, b) => sum + b.points, 0);
     return { ...team, displayTotal };
   }).sort((a, b) => b.displayTotal - a.displayTotal);
 
@@ -44,17 +58,33 @@ export default function Leaderboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Live Leaderboard</h1>
-        <div className="flex items-center space-x-4">
-          <select 
-            className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700"
-            value={filterCatId}
-            onChange={e => setFilterCatId(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-slate-500 font-medium hidden md:inline">Age:</span>
+            <select 
+              className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700"
+              value={filterProgCat}
+              onChange={e => setFilterProgCat(e.target.value)}
+            >
+              <option value="all">All Programmes</option>
+              {PROGRAMME_CATEGORIES.map(c => (
+                <option key={c} value={c}>{formatCategory(c)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-slate-500 font-medium hidden md:inline">Scoring:</span>
+            <select 
+              className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700"
+              value={filterCatId}
+              onChange={e => setFilterCatId(e.target.value)}
+            >
+              <option value="all">All Scoring Categories</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           <button onClick={fetchData} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 text-sm">
             Refresh
           </button>

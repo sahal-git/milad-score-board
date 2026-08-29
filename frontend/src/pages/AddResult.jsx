@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Save } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+const formatCategory = (str) => {
+  if (!str) return '';
+  return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
 
 const PositionSection = ({ title, pos, color, formData, setFormData, teams, points }) => (
   <div className={`p-5 rounded-xl border ${color} space-y-4 bg-white relative`}>
@@ -49,7 +54,7 @@ export default function AddResult() {
   const [categories, setCategories] = useState([]);
   
   const [formData, setFormData] = useState({
-    item_name: '',
+    item_id: '',
     category_id: '',
     first_candidate_name: '',
     first_team_id: '',
@@ -111,6 +116,7 @@ export default function AddResult() {
   };
 
   const selectedCategory = categories.find(c => c.id === formData.category_id);
+  const selectedItem = items.find(i => i.id === formData.item_id);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -119,85 +125,94 @@ export default function AddResult() {
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">{error}</div>}
-
-      <datalist id="item-suggestions">
-        {items.map(item => <option key={item.id} value={item.name} />)}
-      </datalist>
       
       <datalist id="candidate-suggestions">
         {candidates.map(c => <option key={c.id} value={c.name} />)}
       </datalist>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Event Name *</label>
-            <input
-              required
-              type="text"
-              list="item-suggestions"
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
-              placeholder="e.g. Quran Quiz"
-              value={formData.item_name}
-              onChange={e => setFormData({...formData, item_name: e.target.value})}
+      {items.length === 0 ? (
+        <div className="bg-white p-8 text-center rounded-xl border border-slate-200">
+          <p className="text-slate-600 mb-4">You need to create a Programme before adding results.</p>
+          <Link to="/events" className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium inline-block">Go to Programmes</Link>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Programme *</label>
+              <select
+                required
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                value={formData.item_id}
+                onChange={e => setFormData({...formData, item_id: e.target.value})}
+              >
+                <option value="">Select Programme</option>
+                {items.map(item => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+              {selectedItem && (
+                <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 inline-block px-2 py-1 rounded">
+                  Programme Category: {formatCategory(selectedItem.programme_category)}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>
+              <select
+                required
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                value={formData.category_id}
+                onChange={e => setFormData({...formData, category_id: e.target.value})}
+              >
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-2">Determines points awarded for positions.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <PositionSection 
+              title="🥇 1st Place" 
+              pos="first" 
+              color="border-amber-300 ring-1 ring-amber-100" 
+              formData={formData} 
+              setFormData={setFormData} 
+              teams={teams}
+              points={selectedCategory?.first_points}
             />
-            <p className="text-xs text-slate-500 mt-2">Type a new event or select an existing one.</p>
+            <PositionSection 
+              title="🥈 2nd Place" 
+              pos="second" 
+              color="border-slate-300 ring-1 ring-slate-100" 
+              formData={formData} 
+              setFormData={setFormData} 
+              teams={teams} 
+              points={selectedCategory?.second_points}
+            />
+            <PositionSection 
+              title="🥉 3rd Place" 
+              pos="third" 
+              color="border-orange-300 ring-1 ring-orange-100" 
+              formData={formData} 
+              setFormData={setFormData} 
+              teams={teams} 
+              points={selectedCategory?.third_points}
+            />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>
-            <select
-              required
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-              value={formData.category_id}
-              onChange={e => setFormData({...formData, category_id: e.target.value})}
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-slate-500 mt-2">Determines points awarded for positions.</p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <PositionSection 
-            title="🥇 1st Place" 
-            pos="first" 
-            color="border-amber-300 ring-1 ring-amber-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams}
-            points={selectedCategory?.first_points}
-          />
-          <PositionSection 
-            title="🥈 2nd Place" 
-            pos="second" 
-            color="border-slate-300 ring-1 ring-slate-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams} 
-            points={selectedCategory?.second_points}
-          />
-          <PositionSection 
-            title="🥉 3rd Place" 
-            pos="third" 
-            color="border-orange-300 ring-1 ring-orange-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams} 
-            points={selectedCategory?.third_points}
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={saving || !formData.category_id}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-70"
-        >
-          <Save size={24} />
-          <span>{saving ? 'Saving...' : 'Save Result'}</span>
-        </button>
-      </form>
+          <button 
+            type="submit" 
+            disabled={saving || !formData.category_id || !formData.item_id}
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-70"
+          >
+            <Save size={24} />
+            <span>{saving ? 'Saving...' : 'Save Result'}</span>
+          </button>
+        </form>
+      )}
     </div>
   );
 }

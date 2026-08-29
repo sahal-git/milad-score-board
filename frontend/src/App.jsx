@@ -6,6 +6,7 @@ import { supabase } from './lib/supabase';
 
 import Dashboard from './pages/Dashboard';
 import Teams from './pages/Teams';
+import Events from './pages/Events';
 import AddResult from './pages/AddResult';
 import EditResult from './pages/EditResult';
 import Results from './pages/Results';
@@ -23,8 +24,9 @@ function InstitutionSidebar({ mobileOpen, setMobileOpen, onLogout, user }) {
   const location = useLocation();
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Programmes', path: '/events', icon: List },
     { name: 'Add Result', path: '/results/add', icon: PlusCircle },
-    { name: 'Results', path: '/results', icon: List },
+    { name: 'Results', path: '/results', icon: Trophy },
     { name: 'Teams', path: '/teams', icon: Users },
     { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
     { name: 'Settings', path: '/settings', icon: Settings },
@@ -123,15 +125,13 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [authErrorMsg, setAuthErrorMsg] = useState('');
 
-  // Bypass Auth entirely if rendering a public route
   const isPublicRoute = window.location.pathname.startsWith('/public');
-
   const isSuperAdminMode = user && user.role === 'super_admin';
   const openInstId = localStorage.getItem('super_open_institution_id');
   const isViewingInstitution = isSuperAdminMode && openInstId;
 
   useEffect(() => {
-    if (isPublicRoute) return; // Skip auth checks on public page
+    if (isPublicRoute) return; 
 
     const handleAuthError = (e) => {
       setUser(null);
@@ -204,7 +204,6 @@ function App() {
     );
   }
 
-  // If super admin is viewing an institution, they get the institution layout
   const activeRole = isViewingInstitution ? 'institution_admin' : user.role;
 
   return (
@@ -249,6 +248,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/teams" element={<Teams />} />
+                  <Route path="/events" element={<Events />} />
                   <Route path="/results/add" element={<AddResult />} />
                   <Route path="/results/edit/:id" element={<EditResult />} />
                   <Route path="/results" element={<Results />} />

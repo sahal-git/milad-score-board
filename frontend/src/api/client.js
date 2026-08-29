@@ -33,17 +33,41 @@ export const apiClient = async (endpoint, options = {}) => {
       const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
       if (!instId) throw new Error('No institution context');
 
-      const { data: inst } = await supabase.from('institutions').select('name, code').eq('id', instId).single();
+      const { data: inst } = await supabase.from('institutions').select('name, public_slug').eq('id', instId).single();
       const { count: totalTeams } = await supabase.from('teams').select('*', { count: 'exact', head: true }).eq('institution_id', instId);
       const { count: totalItems } = await supabase.from('items').select('*', { count: 'exact', head: true }).eq('institution_id', instId);
+      
+      // We only count 1 result per event for 'completed' metrics usually, or count total rows.
+      // Let's just keep total rows for totalResults.
       const { count: totalResults } = await supabase.from('results').select('*', { count: 'exact', head: true }).eq('institution_id', instId);
       
+      const { data: items } = await supabase.from('items').select('id, programme_category').eq('institution_id', instId);
+      const { data: results } = await supabase.from('results').select('item_id').eq('institution_id', instId);
+      
+      const completedItemIds = new Set(results?.map(r => r.item_id) || []);
+      
+      const progCategories = {};
+      const predefined = ['kiddies', 'sub_junior', 'junior', 'senior', 'super_senior', 'general'];
+      predefined.forEach(cat => {
+        progCategories[cat] = { name: cat, total: 0, completed: 0 };
+      });
+
+      for (const item of (items || [])) {
+        const cat = item.programme_category;
+        if (!progCategories[cat]) progCategories[cat] = { name: cat, total: 0, completed: 0 };
+        progCategories[cat].total++;
+        if (completedItemIds.has(item.id)) {
+          progCategories[cat].completed++;
+        }
+      }
+
       return {
+        institutionName: inst?.name,
+        institutionCode: inst?.public_slug,
         totalTeams: totalTeams || 0,
         totalItems: totalItems || 0,
-        totalResults: totalResults || 0,
-        institutionName: inst?.name || '',
-        institutionCode: inst?.code || ''
+        totalResults: Math.floor((totalResults || 0) / 3), // 3 positions per result
+        programmeCategories: Object.values(progCategories).filter(c => c.total > 0 || predefined.includes(c.name))
       };
     }
 
@@ -53,25 +77,36 @@ export const apiClient = async (endpoint, options = {}) => {
       const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
       if (!instId) return [];
 
-      const { data, error } = await supabase
-        .from('leaderboard')
-        .select('*')
-        .eq('institution_id', instId)
-        .order('total_points', { ascending: false });
-        
-      if (error) throw error;
-      
-      // format to match old output
-      return (data || []).map(row => ({
-        id: row.team_id,
-        name: row.team_name,
-        logo_url: row.logo_url,
-        firstCount: Number(row.first_count),
-        secondCount: Number(row.second_count),
-        thirdCount: Number(row.third_count),
-        totalPoints: Number(row.total_points),
-        categoryPoints: row.category_points || {}
-      }));
+      const { data: teams, error: tErr } = await supabase.from('teams').select('id, name, logo_url').eq('institution_id', instId);
+      if (tErr) throw tErr;
+
+      const { data: results, error: rErr } = await supabase.from('results')
+        .select('team_id, position, points_awarded, category_id, items(programme_category)')
+        .eq('institution_id', instId);
+      if (rErr) throw rErr;
+
+      const board = teams.map(t => {
+        const teamResults = results.filter(r => r.team_id === t.id);
+        const teamBreakdown = teamResults.map(r => ({
+          category_id: r.category_id,
+          programme_category: r.items?.programme_category || 'general',
+          points: r.points_awarded,
+          position: r.position
+        }));
+
+        return {
+          id: t.id,
+          name: t.name,
+          logo_url: t.logo_url,
+          firstCount: teamResults.filter(r => r.position === 1).length,
+          secondCount: teamResults.filter(r => r.position === 2).length,
+          thirdCount: teamResults.filter(r => r.position === 3).length,
+          totalPoints: teamResults.reduce((sum, r) => sum + r.points_awarded, 0),
+          breakdown: teamBreakdown
+        };
+      });
+
+      return board.sort((a, b) => b.totalPoints - a.totalPoints);
     }
 
     // /teams
@@ -109,11 +144,39 @@ export const apiClient = async (endpoint, options = {}) => {
     if (endpoint === '/items') {
       const profile = await ensureAuth();
       const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
-      
       if (method === 'GET') {
         const { data, error } = await supabase.from('items').select('*').eq('institution_id', instId).order('name', { ascending: true });
         if (error) throw error;
         return data;
+      }
+      
+      if (method === 'POST') {
+        const { name, programme_category } = options.body ? JSON.parse(options.body) : {};
+        if (!name || !programme_category) throw new Error('Name and programme category are required');
+        const { data, error } = await supabase.from('items').insert({
+          institution_id: instId,
+          name,
+          programme_category
+        }).select().single();
+        if (error) throw error;
+        return data;
+      }
+    }
+    
+    if (endpoint.startsWith('/items/')) {
+      const id = endpoint.split('/')[2];
+      const profile = await ensureAuth();
+      const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+      if (method === 'PUT') {
+        const { name, programme_category } = options.body ? JSON.parse(options.body) : {};
+        const { data, error } = await supabase.from('items').update({ name, programme_category }).eq('id', id).eq('institution_id', instId).select().single();
+        if (error) throw error;
+        return data;
+      }
+      if (method === 'DELETE') {
+        const { error } = await supabase.from('items').delete().eq('id', id).eq('institution_id', instId);
+        if (error) throw error;
+        return { success: true };
       }
     }
 
@@ -167,7 +230,6 @@ export const apiClient = async (endpoint, options = {}) => {
       const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
       
       if (method === 'GET') {
-        // Group results by event
         const { data, error } = await supabase
           .from('results')
           .select(`
@@ -175,7 +237,7 @@ export const apiClient = async (endpoint, options = {}) => {
             created_at,
             position,
             points_awarded,
-            items (id, name),
+            items (id, name, programme_category),
             scoring_categories (id, name),
             candidates (id, name),
             teams (id, name)
@@ -185,59 +247,49 @@ export const apiClient = async (endpoint, options = {}) => {
           
         if (error) throw error;
         
-        // Transform normalized data into grouped format
         const grouped = {};
         for (const r of data) {
           const itemId = r.items.id;
           if (!grouped[itemId]) {
             grouped[itemId] = {
-              id: itemId, // use item_id as the primary key for the grouped result
+              id: itemId,
               created_at: r.created_at,
               item_id: r.items.id,
               item_name: r.items.name,
-              category_id: r.scoring_categories.id,
-              category_name: r.scoring_categories.name,
+              programme_category: r.items.programme_category,
+              category_id: r.scoring_categories?.id,
+              category_name: r.scoring_categories?.name,
             };
           }
-          
           if (r.position === 1) {
-            grouped[itemId].first_candidate_id = r.candidates?.id;
-            grouped[itemId].first_candidate = r.candidates?.name;
-            grouped[itemId].first_team_id = r.teams?.id;
-            grouped[itemId].first_team = r.teams?.name;
+            grouped[itemId].first_team_name = r.teams?.name;
             grouped[itemId].first_points = r.points_awarded;
           } else if (r.position === 2) {
-            grouped[itemId].second_candidate_id = r.candidates?.id;
-            grouped[itemId].second_candidate = r.candidates?.name;
-            grouped[itemId].second_team_id = r.teams?.id;
-            grouped[itemId].second_team = r.teams?.name;
+            grouped[itemId].second_team_name = r.teams?.name;
             grouped[itemId].second_points = r.points_awarded;
           } else if (r.position === 3) {
-            grouped[itemId].third_candidate_id = r.candidates?.id;
-            grouped[itemId].third_candidate = r.candidates?.name;
-            grouped[itemId].third_team_id = r.teams?.id;
-            grouped[itemId].third_team = r.teams?.name;
+            grouped[itemId].third_team_name = r.teams?.name;
             grouped[itemId].third_points = r.points_awarded;
           }
         }
-        
         return Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
       
       if (method === 'POST') {
+        const payload = options.body ? JSON.parse(options.body) : {};
         const { data, error } = await supabase.rpc('create_result', {
           p_institution_id: instId,
-          p_item_name: body.item_name,
-          p_category_id: body.category_id,
-          p_first_candidate_name: body.first_candidate_name,
-          p_first_team_id: body.first_team_id,
-          p_second_candidate_name: body.second_candidate_name,
-          p_second_team_id: body.second_team_id,
-          p_third_candidate_name: body.third_candidate_name,
-          p_third_team_id: body.third_team_id
+          p_item_id: payload.item_id,
+          p_category_id: payload.category_id,
+          p_first_candidate_name: payload.first_candidate_name || null,
+          p_first_team_id: payload.first_team_id || null,
+          p_second_candidate_name: payload.second_candidate_name || null,
+          p_second_team_id: payload.second_team_id || null,
+          p_third_candidate_name: payload.third_candidate_name || null,
+          p_third_team_id: payload.third_team_id || null
         });
         if (error) throw error;
-        return { success: true, item_id: data };
+        return data;
       }
     }
     
@@ -252,7 +304,7 @@ export const apiClient = async (endpoint, options = {}) => {
           .from('results')
           .select(`
             id, position, points_awarded,
-            items (id, name),
+            items (id, name, programme_category),
             scoring_categories (id, name),
             candidates (id, name),
             teams (id, name)
@@ -261,30 +313,50 @@ export const apiClient = async (endpoint, options = {}) => {
           .eq('institution_id', instId);
           
         if (error) throw error;
-        
         if (!data || data.length === 0) throw new Error('Not found');
         
         const r0 = data[0];
         const res = {
           item_id: r0.items.id,
           item_name: r0.items.name,
+          programme_category: r0.items.programme_category,
           category_id: r0.scoring_categories.id,
           category_name: r0.scoring_categories.name,
         };
         
         for (const r of data) {
           if (r.position === 1) {
-            res.first_candidate_name = r.candidates?.name || '';
-            res.first_team_id = r.teams?.id || '';
+            res.first_candidate_name = r.candidates?.name;
+            res.first_team_id = r.teams?.id;
           } else if (r.position === 2) {
-            res.second_candidate_name = r.candidates?.name || '';
-            res.second_team_id = r.teams?.id || '';
+            res.second_candidate_name = r.candidates?.name;
+            res.second_team_id = r.teams?.id;
           } else if (r.position === 3) {
-            res.third_candidate_name = r.candidates?.name || '';
-            res.third_team_id = r.teams?.id || '';
+            res.third_candidate_name = r.candidates?.name;
+            res.third_team_id = r.teams?.id;
           }
         }
         return res;
+      }
+      
+      if (method === 'PUT') {
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+        const payload = options.body ? JSON.parse(options.body) : {};
+        
+        const { data, error } = await supabase.rpc('update_result', {
+          p_institution_id: instId,
+          p_item_id: id,
+          p_category_id: payload.category_id,
+          p_first_candidate_name: payload.first_candidate_name || null,
+          p_first_team_id: payload.first_team_id || null,
+          p_second_candidate_name: payload.second_candidate_name || null,
+          p_second_team_id: payload.second_team_id || null,
+          p_third_candidate_name: payload.third_candidate_name || null,
+          p_third_team_id: payload.third_team_id || null
+        });
+        if (error) throw error;
+        return data;
       }
       
       if (method === 'DELETE') {
@@ -292,23 +364,6 @@ export const apiClient = async (endpoint, options = {}) => {
         const profile = await ensureAuth();
         const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
         const { error } = await supabase.from('results').delete().eq('item_id', id).eq('institution_id', instId);
-        if (error) throw error;
-        return { success: true };
-      }
-      if (method === 'PUT') {
-        const profile = await ensureAuth();
-        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
-        const { error } = await supabase.rpc('update_result', {
-          p_institution_id: instId,
-          p_item_id: id,
-          p_category_id: body.category_id,
-          p_first_candidate_name: body.first_candidate_name,
-          p_first_team_id: body.first_team_id,
-          p_second_candidate_name: body.second_candidate_name,
-          p_second_team_id: body.second_team_id,
-          p_third_candidate_name: body.third_candidate_name,
-          p_third_team_id: body.third_team_id
-        });
         if (error) throw error;
         return { success: true };
       }
