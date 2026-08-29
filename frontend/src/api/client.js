@@ -389,8 +389,15 @@ export const apiClient = async (endpoint, options = {}) => {
         }
         
         if (method === 'POST') {
+          const payload = {
+            name: body.name,
+            code: body.code,
+            public_slug: body.code.toLowerCase(),
+            admin_username: body.username,
+            admin_password: body.password
+          };
           const { data, error } = await supabase.functions.invoke('admin-operations', {
-            body: { action: 'create_institution', payload: body }
+            body: { action: 'create_institution', payload }
           });
           if (error) throw error;
           if (data.error) throw new Error(data.error);
