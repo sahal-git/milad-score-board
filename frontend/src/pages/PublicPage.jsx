@@ -22,6 +22,13 @@ export default function PublicPage() {
   const [activeTab, setActiveTab] = useState('leaderboard');
   const [filterCatId, setFilterCatId] = useState('all');
   const [filterProgCat, setFilterProgCat] = useState('all');
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,20 +165,21 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      <header className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white p-6 md:p-10 shadow-lg sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+      <header className={`bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-lg sticky top-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`}>
+        <div className={`max-w-5xl mx-auto flex justify-between items-center transition-all duration-300 ${isScrolled ? 'flex-row' : 'flex-col md:flex-row gap-6'}`}>
+          <div className={`flex items-center text-left ${isScrolled ? 'gap-3' : 'flex-col md:flex-row gap-4 w-full md:w-auto text-center md:text-left'}`}>
             {data.logo_url && (
-              <img src={data.logo_url} alt="Logo" className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-md bg-white object-cover" />
+              <img src={data.logo_url} alt="Logo" className={`rounded-full border-white shadow-md bg-white object-cover transition-all duration-300 ${isScrolled ? 'w-10 h-10 border-2' : 'w-20 h-20 md:w-24 md:h-24 border-4'}`} />
             )}
             <div>
-              <h2 className="text-indigo-300 text-xs md:text-sm font-bold uppercase tracking-wider mb-1">Live Festival Results</h2>
-              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight">{data.institutionName}</h1>
+              <h2 className={`text-indigo-300 font-bold uppercase tracking-wider transition-all duration-300 ${isScrolled ? 'hidden' : 'text-xs md:text-sm mb-1'}`}>Live Festival Results</h2>
+              <h1 className={`font-extrabold tracking-tight transition-all duration-300 ${isScrolled ? 'text-lg md:text-2xl line-clamp-1' : 'text-2xl md:text-4xl'}`}>{data.institutionName}</h1>
             </div>
           </div>
-          <div className="flex items-center space-x-2 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-            <span className="text-sm font-medium text-indigo-50">Live Updates</span>
+          <div className={`flex items-center bg-black/20 backdrop-blur-sm rounded-full border border-white/10 transition-all duration-300 ${isScrolled ? 'px-3 py-1.5' : 'px-4 py-2'}`}>
+            <div className={`rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)] ${isScrolled ? 'w-2 h-2 mr-1.5' : 'w-2.5 h-2.5 mr-2'}`}></div>
+            <span className={`font-medium text-indigo-50 ${isScrolled ? 'text-xs hidden sm:inline' : 'text-sm'}`}>Live Updates</span>
+            {isScrolled && <span className="font-medium text-indigo-50 text-[10px] uppercase sm:hidden">Live</span>}
           </div>
         </div>
       </header>
