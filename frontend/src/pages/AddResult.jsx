@@ -148,7 +148,7 @@ export default function AddResult() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Filter by Age</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Programme Category</label>
               <select
                 className="w-full border border-slate-300 rounded-lg px-4 py-3 text-lg font-medium focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
                 value={filterProgCat}
@@ -157,7 +157,7 @@ export default function AddResult() {
                   setFormData({...formData, item_id: ''}); // reset item selection when filter changes
                 }}
               >
-                <option value="all">All Age Groups</option>
+                <option value="all">All Categories</option>
                 {availableProgCats.map(cat => (
                   <option key={cat} value={cat}>{formatCategory(cat)}</option>
                 ))}

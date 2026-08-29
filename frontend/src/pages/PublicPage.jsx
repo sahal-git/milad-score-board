@@ -187,7 +187,7 @@ export default function PublicPage() {
                 </h2>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium" value={filterProgCat} onChange={e => setFilterProgCat(e.target.value)}>
-                    <option value="all">All Age Groups</option>
+                    <option value="all">All Categories</option>
                     {PROGRAMME_CATEGORIES.map(c => <option key={c} value={c}>{formatCategory(c)}</option>)}
                   </select>
                   <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium" value={filterCatId} onChange={e => setFilterCatId(e.target.value)}>

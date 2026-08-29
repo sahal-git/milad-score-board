@@ -60,13 +60,13 @@ export default function Leaderboard() {
         <h1 className="text-2xl font-bold text-slate-800">Live Leaderboard</h1>
         <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-500 font-medium hidden md:inline">Age:</span>
+            <span className="text-sm text-slate-500 font-medium hidden md:inline">Category:</span>
             <select 
               className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700"
               value={filterProgCat}
               onChange={e => setFilterProgCat(e.target.value)}
             >
-              <option value="all">All Programmes</option>
+              <option value="all">All Categories</option>
               {PROGRAMME_CATEGORIES.map(c => (
                 <option key={c} value={c}>{formatCategory(c)}</option>
               ))}
