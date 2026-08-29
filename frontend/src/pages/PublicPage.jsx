@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Trophy, Activity, Medal, Search, ListFilter, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -23,12 +23,23 @@ export default function PublicPage() {
   const [filterCatId, setFilterCatId] = useState('all');
   const [filterProgCat, setFilterProgCat] = useState('all');
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  const headerRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (headerRef.current && headerHeight === 0 && data) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+  }, [data, headerHeight]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,7 +176,7 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      <header className={`bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-lg sticky top-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`}>
+      <header ref={headerRef} className={`bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-lg fixed top-0 left-0 right-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`}>
         <div className={`max-w-5xl mx-auto flex justify-between items-center transition-all duration-300 ${isScrolled ? 'flex-row' : 'flex-col md:flex-row gap-6'}`}>
           <div className={`flex items-center text-left ${isScrolled ? 'gap-3' : 'flex-col md:flex-row gap-4 w-full md:w-auto text-center md:text-left'}`}>
             {data.logo_url && (
@@ -183,6 +194,9 @@ export default function PublicPage() {
           </div>
         </div>
       </header>
+
+      {/* Spacer to prevent content from jumping when header is fixed */}
+      <div style={{ height: headerHeight > 0 ? headerHeight : 0 }} className="w-full"></div>
 
       <div className="max-w-5xl mx-auto px-4 mt-6">
         <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-1">
