@@ -69,7 +69,8 @@ export const apiClient = async (endpoint, options = {}) => {
         firstCount: Number(row.first_count),
         secondCount: Number(row.second_count),
         thirdCount: Number(row.third_count),
-        totalPoints: Number(row.total_points)
+        totalPoints: Number(row.total_points),
+        categoryPoints: row.category_points || {}
       }));
     }
 
@@ -128,47 +129,106 @@ export const apiClient = async (endpoint, options = {}) => {
       }
     }
 
+    // /categories
+    if (endpoint === '/categories') {
+      const profile = await ensureAuth();
+      const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+      
+      if (method === 'GET') {
+        const { data, error } = await supabase.from('scoring_categories').select('*').eq('institution_id', instId).order('name', { ascending: true });
+        if (error) throw error;
+        return data;
+      }
+      
+      if (method === 'POST') {
+        const { data, error } = await supabase.from('scoring_categories').insert([{ ...body, institution_id: instId }]).select().single();
+        if (error) throw error;
+        return data;
+      }
+    }
+    
+    if (endpoint.startsWith('/categories/')) {
+      const id = endpoint.split('/')[2];
+      if (method === 'DELETE') {
+        const { error } = await supabase.from('scoring_categories').delete().eq('id', id);
+        if (error) throw error;
+        return { success: true };
+      }
+      if (method === 'PUT') {
+        const { data, error } = await supabase.from('scoring_categories').update(body).eq('id', id).select().single();
+        if (error) throw error;
+        return data;
+      }
+    }
+
     // /results
     if (endpoint === '/results') {
       const profile = await ensureAuth();
       const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
       
       if (method === 'GET') {
+        // Group results by event
         const { data, error } = await supabase
           .from('results')
           .select(`
             id,
             created_at,
-            items (name),
-            c1:candidates!first_candidate_id (name),
-            t1:teams!first_team_id (name),
-            c2:candidates!second_candidate_id (name),
-            t2:teams!second_team_id (name),
-            c3:candidates!third_candidate_id (name),
-            t3:teams!third_team_id (name)
+            position,
+            points_awarded,
+            items (id, name),
+            scoring_categories (id, name),
+            candidates (id, name),
+            teams (id, name)
           `)
           .eq('institution_id', instId)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
         
-        return data.map(r => ({
-          id: r.id,
-          created_at: r.created_at,
-          item_name: r.items.name,
-          first_candidate: r.c1?.name,
-          first_team: r.t1?.name,
-          second_candidate: r.c2?.name,
-          second_team: r.t2?.name,
-          third_candidate: r.c3?.name,
-          third_team: r.t3?.name,
-        }));
+        // Transform normalized data into grouped format
+        const grouped = {};
+        for (const r of data) {
+          const itemId = r.items.id;
+          if (!grouped[itemId]) {
+            grouped[itemId] = {
+              id: itemId, // use item_id as the primary key for the grouped result
+              created_at: r.created_at,
+              item_id: r.items.id,
+              item_name: r.items.name,
+              category_id: r.scoring_categories.id,
+              category_name: r.scoring_categories.name,
+            };
+          }
+          
+          if (r.position === 1) {
+            grouped[itemId].first_candidate_id = r.candidates?.id;
+            grouped[itemId].first_candidate = r.candidates?.name;
+            grouped[itemId].first_team_id = r.teams?.id;
+            grouped[itemId].first_team = r.teams?.name;
+            grouped[itemId].first_points = r.points_awarded;
+          } else if (r.position === 2) {
+            grouped[itemId].second_candidate_id = r.candidates?.id;
+            grouped[itemId].second_candidate = r.candidates?.name;
+            grouped[itemId].second_team_id = r.teams?.id;
+            grouped[itemId].second_team = r.teams?.name;
+            grouped[itemId].second_points = r.points_awarded;
+          } else if (r.position === 3) {
+            grouped[itemId].third_candidate_id = r.candidates?.id;
+            grouped[itemId].third_candidate = r.candidates?.name;
+            grouped[itemId].third_team_id = r.teams?.id;
+            grouped[itemId].third_team = r.teams?.name;
+            grouped[itemId].third_points = r.points_awarded;
+          }
+        }
+        
+        return Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
       
       if (method === 'POST') {
         const { data, error } = await supabase.rpc('create_result', {
           p_institution_id: instId,
           p_item_name: body.item_name,
+          p_category_id: body.category_id,
           p_first_candidate_name: body.first_candidate_name,
           p_first_team_id: body.first_team_id,
           p_second_candidate_name: body.second_candidate_name,
@@ -177,34 +237,80 @@ export const apiClient = async (endpoint, options = {}) => {
           p_third_team_id: body.third_team_id
         });
         if (error) throw error;
-        return { success: true, id: data };
+        return { success: true, item_id: data };
       }
     }
     
     if (endpoint.startsWith('/results/')) {
       const id = endpoint.split('/')[2];
+      
+      if (method === 'GET') {
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+        
+        const { data, error } = await supabase
+          .from('results')
+          .select(`
+            id, position, points_awarded,
+            items (id, name),
+            scoring_categories (id, name),
+            candidates (id, name),
+            teams (id, name)
+          `)
+          .eq('item_id', id)
+          .eq('institution_id', instId);
+          
+        if (error) throw error;
+        
+        if (!data || data.length === 0) throw new Error('Not found');
+        
+        const r0 = data[0];
+        const res = {
+          item_id: r0.items.id,
+          item_name: r0.items.name,
+          category_id: r0.scoring_categories.id,
+          category_name: r0.scoring_categories.name,
+        };
+        
+        for (const r of data) {
+          if (r.position === 1) {
+            res.first_candidate_name = r.candidates?.name || '';
+            res.first_team_id = r.teams?.id || '';
+          } else if (r.position === 2) {
+            res.second_candidate_name = r.candidates?.name || '';
+            res.second_team_id = r.teams?.id || '';
+          } else if (r.position === 3) {
+            res.third_candidate_name = r.candidates?.name || '';
+            res.third_team_id = r.teams?.id || '';
+          }
+        }
+        return res;
+      }
+      
       if (method === 'DELETE') {
-        const { error } = await supabase.from('results').delete().eq('id', id);
+        // Here `id` is the item_id because we group by item_id
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+        const { error } = await supabase.from('results').delete().eq('item_id', id).eq('institution_id', instId);
         if (error) throw error;
         return { success: true };
       }
-    }
-
-    // /settings
-    if (endpoint === '/settings') {
-      const profile = await ensureAuth();
-      const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
-      
-      if (method === 'GET') {
-        const { data, error } = await supabase.from('score_settings').select('*').eq('institution_id', instId).single();
-        if (error) throw error;
-        return data;
-      }
-      
       if (method === 'PUT') {
-        const { data, error } = await supabase.from('score_settings').update(body).eq('institution_id', instId).select().single();
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+        const { error } = await supabase.rpc('update_result', {
+          p_institution_id: instId,
+          p_item_id: id,
+          p_category_id: body.category_id,
+          p_first_candidate_name: body.first_candidate_name,
+          p_first_team_id: body.first_team_id,
+          p_second_candidate_name: body.second_candidate_name,
+          p_second_team_id: body.second_team_id,
+          p_third_candidate_name: body.third_candidate_name,
+          p_third_team_id: body.third_team_id
+        });
         if (error) throw error;
-        return data;
+        return { success: true };
       }
     }
 

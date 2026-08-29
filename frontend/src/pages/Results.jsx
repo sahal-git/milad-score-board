@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Trash2, Edit } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Results() {
   const [results, setResults] = useState([]);
@@ -33,7 +34,8 @@ export default function Results() {
   };
 
   const filteredResults = results.filter(r => 
-    r.item_name.toLowerCase().includes(search.toLowerCase())
+    r.item_name.toLowerCase().includes(search.toLowerCase()) ||
+    (r.category_name && r.category_name.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
@@ -44,8 +46,8 @@ export default function Results() {
         <h1 className="text-2xl font-bold text-slate-800">Results</h1>
         <input 
           type="text" 
-          placeholder="Search by item name..." 
-          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+          placeholder="Search by event or category..." 
+          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-auto"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -53,10 +55,10 @@ export default function Results() {
 
       <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium text-sm">
-                <th className="p-4">Item</th>
+                <th className="p-4">Event</th>
                 <th className="p-4">1st Place</th>
                 <th className="p-4">2nd Place</th>
                 <th className="p-4">3rd Place</th>
@@ -71,21 +73,41 @@ export default function Results() {
               ) : (
                 filteredResults.map((result) => (
                   <tr key={result.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 font-semibold text-slate-800">{result.item_name}</td>
                     <td className="p-4">
-                      <div className="text-sm font-medium">{result.first_candidate_name}</div>
-                      <div className="text-xs text-amber-600 font-semibold">{result.first_team_name}</div>
+                      <div className="font-bold text-slate-800 text-base">{result.item_name}</div>
+                      <div className="text-xs font-semibold text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded mt-1">
+                        {result.category_name}
+                      </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-sm font-medium">{result.second_candidate_name}</div>
-                      <div className="text-xs text-slate-500 font-semibold">{result.second_team_name}</div>
+                      {result.first_team && (
+                        <>
+                          <div className="text-sm font-medium">{result.first_candidate || '-'}</div>
+                          <div className="text-xs text-amber-600 font-semibold">{result.first_team} ({result.first_points} pts)</div>
+                        </>
+                      )}
                     </td>
                     <td className="p-4">
-                      <div className="text-sm font-medium">{result.third_candidate_name}</div>
-                      <div className="text-xs text-orange-600 font-semibold">{result.third_team_name}</div>
+                      {result.second_team && (
+                        <>
+                          <div className="text-sm font-medium">{result.second_candidate || '-'}</div>
+                          <div className="text-xs text-slate-500 font-semibold">{result.second_team} ({result.second_points} pts)</div>
+                        </>
+                      )}
                     </td>
-                    <td className="p-4 text-right">
-                      <button onClick={() => handleDelete(result.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <td className="p-4">
+                      {result.third_team && (
+                        <>
+                          <div className="text-sm font-medium">{result.third_candidate || '-'}</div>
+                          <div className="text-xs text-orange-600 font-semibold">{result.third_team} ({result.third_points} pts)</div>
+                        </>
+                      )}
+                    </td>
+                    <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                      <Link to={`/results/edit/${result.id}`} className="inline-block p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                        <Edit size={18} />
+                      </Link>
+                      <button onClick={() => handleDelete(result.id)} className="inline-block p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 size={18} />
                       </button>
                     </td>

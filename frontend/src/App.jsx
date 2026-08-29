@@ -7,6 +7,7 @@ import { supabase } from './lib/supabase';
 import Dashboard from './pages/Dashboard';
 import Teams from './pages/Teams';
 import AddResult from './pages/AddResult';
+import EditResult from './pages/EditResult';
 import Results from './pages/Results';
 import Leaderboard from './pages/Leaderboard';
 import SettingsPage from './pages/Settings';
@@ -249,6 +250,7 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/teams" element={<Teams />} />
                   <Route path="/results/add" element={<AddResult />} />
+                  <Route path="/results/edit/:id" element={<EditResult />} />
                   <Route path="/results" element={<Results />} />
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/settings" element={<SettingsPage />} />

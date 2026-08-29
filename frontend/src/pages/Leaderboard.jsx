@@ -4,16 +4,22 @@ import { Trophy } from 'lucide-react';
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterCatId, setFilterCatId] = useState('all');
 
   useEffect(() => {
-    fetchLeaderboard();
+    fetchData();
   }, []);
 
-  const fetchLeaderboard = async () => {
+  const fetchData = async () => {
     try {
-      const data = await apiClient('/leaderboard');
-      setLeaderboard(data);
+      const [boardData, catData] = await Promise.all([
+        apiClient('/leaderboard'),
+        apiClient('/categories')
+      ]);
+      setLeaderboard(boardData);
+      setCategories(catData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -23,13 +29,36 @@ export default function Leaderboard() {
 
   if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
 
+  // Derive display data based on filter
+  const displayBoard = [...leaderboard].map(team => {
+    let displayTotal = 0;
+    if (filterCatId === 'all') {
+      displayTotal = team.totalPoints;
+    } else {
+      displayTotal = team.categoryPoints[filterCatId] || 0;
+    }
+    return { ...team, displayTotal };
+  }).sort((a, b) => b.displayTotal - a.displayTotal);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Live Leaderboard</h1>
-        <button onClick={fetchLeaderboard} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 text-sm">
-          Refresh
-        </button>
+        <div className="flex items-center space-x-4">
+          <select 
+            className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700"
+            value={filterCatId}
+            onChange={e => setFilterCatId(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <button onClick={fetchData} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 text-sm">
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
@@ -39,22 +68,24 @@ export default function Leaderboard() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium text-sm">
                 <th className="p-4 w-16 text-center">Rank</th>
                 <th className="p-4">Team</th>
-                <th className="p-4 text-center">1st</th>
-                <th className="p-4 text-center">2nd</th>
-                <th className="p-4 text-center">3rd</th>
+                {filterCatId === 'all' && categories.map(cat => (
+                  <th key={cat.id} className="p-4 text-right text-slate-500 font-medium hidden md:table-cell">
+                    {cat.name}
+                  </th>
+                ))}
                 <th className="p-4 text-right pr-6">Total Points</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {leaderboard.length === 0 ? (
+              {displayBoard.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">No teams found. Add teams to see the leaderboard.</td>
+                  <td colSpan={3 + (filterCatId === 'all' ? categories.length : 0)} className="p-8 text-center text-slate-500">No teams found. Add teams to see the leaderboard.</td>
                 </tr>
               ) : (
-                leaderboard.map((team, idx) => {
-                  const isFirst = idx === 0;
-                  const isSecond = idx === 1;
-                  const isThird = idx === 2;
+                displayBoard.map((team, idx) => {
+                  const isFirst = idx === 0 && team.displayTotal > 0;
+                  const isSecond = idx === 1 && team.displayTotal > 0;
+                  const isThird = idx === 2 && team.displayTotal > 0;
                   
                   return (
                     <tr key={team.id} className={`hover:bg-slate-50 transition-colors ${isFirst ? 'bg-amber-50/30' : ''}`}>
@@ -75,11 +106,13 @@ export default function Leaderboard() {
                           </span>
                         </div>
                       </td>
-                      <td className="p-4 text-center text-slate-600">{team.firstCount}</td>
-                      <td className="p-4 text-center text-slate-600">{team.secondCount}</td>
-                      <td className="p-4 text-center text-slate-600">{team.thirdCount}</td>
+                      {filterCatId === 'all' && categories.map(cat => (
+                        <td key={cat.id} className="p-4 text-right text-slate-500 hidden md:table-cell">
+                          {team.categoryPoints[cat.id] || 0}
+                        </td>
+                      ))}
                       <td className={`p-4 text-right pr-6 font-bold ${isFirst ? 'text-amber-700 text-xl' : 'text-slate-800 text-lg'}`}>
-                        {team.totalPoints}
+                        {team.displayTotal}
                       </td>
                     </tr>
                   );

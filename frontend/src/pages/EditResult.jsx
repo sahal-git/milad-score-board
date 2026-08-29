@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Save } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const PositionSection = ({ title, pos, color, formData, setFormData, teams, points }) => (
   <div className={`p-5 rounded-xl border ${color} space-y-4 bg-white relative`}>
@@ -41,10 +41,11 @@ const PositionSection = ({ title, pos, color, formData, setFormData, teams, poin
   </div>
 );
 
-export default function AddResult() {
+export default function EditResult() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  
   const [teams, setTeams] = useState([]);
-  const [items, setItems] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [categories, setCategories] = useState([]);
   
@@ -61,36 +62,45 @@ export default function AddResult() {
 
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [teamsData, itemsData, candidatesData, categoriesData] = await Promise.all([
+        const [teamsData, candidatesData, categoriesData, resultData] = await Promise.all([
           apiClient('/teams'),
-          apiClient('/items'),
           apiClient('/candidates'),
-          apiClient('/categories')
+          apiClient('/categories'),
+          apiClient(`/results/${id}`)
         ]);
         setTeams(teamsData);
-        setItems(itemsData);
         setCandidates(candidatesData);
         setCategories(categoriesData);
-        
-        if (categoriesData.length > 0) {
-          setFormData(prev => ({ ...prev, category_id: categoriesData[0].id }));
-        }
+        setFormData({
+          item_name: resultData.item_name,
+          category_id: resultData.category_id,
+          first_candidate_name: resultData.first_candidate_name || '',
+          first_team_id: resultData.first_team_id || '',
+          second_candidate_name: resultData.second_candidate_name || '',
+          second_team_id: resultData.second_team_id || '',
+          third_candidate_name: resultData.third_candidate_name || '',
+          third_team_id: resultData.third_team_id || '',
+        });
       } catch (err) {
         console.error('Failed to load form data', err);
+        setError('Failed to load result. It may have been deleted.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    // basic validation: same team can't be selected twice
+    // basic validation
     const selectedTeams = [formData.first_team_id, formData.second_team_id, formData.third_team_id].filter(Boolean);
     if (new Set(selectedTeams).size !== selectedTeams.length) {
       setError('A team cannot occupy multiple positions in the same event.');
@@ -99,8 +109,8 @@ export default function AddResult() {
 
     setSaving(true);
     try {
-      await apiClient('/results', {
-        method: 'POST',
+      await apiClient(`/results/${id}`, {
+        method: 'PUT',
         body: JSON.stringify(formData),
       });
       navigate('/results');
@@ -112,17 +122,15 @@ export default function AddResult() {
 
   const selectedCategory = categories.find(c => c.id === formData.category_id);
 
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Add Result</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Edit Result</h1>
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">{error}</div>}
-
-      <datalist id="item-suggestions">
-        {items.map(item => <option key={item.id} value={item.name} />)}
-      </datalist>
       
       <datalist id="candidate-suggestions">
         {candidates.map(c => <option key={c.id} value={c.name} />)}
@@ -131,17 +139,14 @@ export default function AddResult() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Event Name *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Event Name</label>
             <input
-              required
               type="text"
-              list="item-suggestions"
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
-              placeholder="e.g. Quran Quiz"
+              disabled
+              className="w-full border border-slate-200 bg-slate-50 rounded-lg px-4 py-3 text-xl font-semibold outline-none text-slate-500"
               value={formData.item_name}
-              onChange={e => setFormData({...formData, item_name: e.target.value})}
             />
-            <p className="text-xs text-slate-500 mt-2">Type a new event or select an existing one.</p>
+            <p className="text-xs text-slate-500 mt-2">Event name cannot be changed.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>
@@ -195,7 +200,7 @@ export default function AddResult() {
           className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-70"
         >
           <Save size={24} />
-          <span>{saving ? 'Saving...' : 'Save Result'}</span>
+          <span>{saving ? 'Saving...' : 'Update Result'}</span>
         </button>
       </form>
     </div>
