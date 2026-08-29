@@ -28,7 +28,7 @@ export default function PublicPage() {
       try {
         const { data: inst, error: instErr } = await supabase
           .from('institutions')
-          .select('id, name, public_score_enabled')
+          .select('id, name, public_score_enabled, logo_url')
           .eq('public_slug', code.toLowerCase())
           .single();
 
@@ -41,7 +41,7 @@ export default function PublicPage() {
           .eq('institution_id', inst.id)
           .order('name');
 
-        const { data: teamsData } = await supabase.from('teams').select('id, name').eq('institution_id', inst.id);
+        const { data: teamsData } = await supabase.from('teams').select('id, name, logo_url').eq('institution_id', inst.id);
         
         const { data: resultsData } = await supabase
           .from('results')
@@ -50,7 +50,7 @@ export default function PublicPage() {
             items (id, name, programme_category),
             scoring_categories (id, name),
             candidates (id, name),
-            teams (id, name)
+            teams (id, name, logo_url)
           `)
           .eq('institution_id', inst.id)
           .order('created_at', { ascending: false });
@@ -66,6 +66,7 @@ export default function PublicPage() {
           return {
             id: t.id,
             name: t.name,
+            logo_url: t.logo_url,
             firstCount: teamResults.filter(r => r.position === 1).length,
             secondCount: teamResults.filter(r => r.position === 2).length,
             thirdCount: teamResults.filter(r => r.position === 3).length,
@@ -105,6 +106,7 @@ export default function PublicPage() {
 
         setData({
           institutionName: inst.name,
+          logo_url: inst.logo_url,
           categories: catData || [],
           leaderboard: leaderboard.sort((a, b) => b.totalPoints - a.totalPoints),
           recentResults: sortedGrouped.slice(0, 5),
@@ -156,23 +158,28 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      <header className="bg-indigo-900 text-white p-6 shadow-md sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <h2 className="text-indigo-300 text-sm font-bold uppercase tracking-wider">Live Results</h2>
-            <h1 className="text-3xl font-bold">{data.institutionName}</h1>
+      <header className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white p-6 md:p-10 shadow-lg sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+            {data.logo_url && (
+              <img src={data.logo_url} alt="Logo" className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-md bg-white object-cover" />
+            )}
+            <div>
+              <h2 className="text-indigo-300 text-xs md:text-sm font-bold uppercase tracking-wider mb-1">Live Festival Results</h2>
+              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight">{data.institutionName}</h1>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 bg-indigo-800 px-4 py-2 rounded-full border border-indigo-700">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-            <span className="text-sm font-medium text-indigo-100">Live Updates</span>
+          <div className="flex items-center space-x-2 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+            <span className="text-sm font-medium text-indigo-50">Live Updates</span>
           </div>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 mt-6">
-        <div className="flex space-x-2 border-b border-slate-200">
-          <button onClick={() => setActiveTab('leaderboard')} className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'leaderboard' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Leaderboard</button>
-          <button onClick={() => setActiveTab('items')} className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'items' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Item-wise Results</button>
+        <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-1">
+          <button onClick={() => setActiveTab('leaderboard')} className={`flex-1 px-4 py-3 font-bold text-sm md:text-base rounded-lg transition-all ${activeTab === 'leaderboard' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>🏆 Leaderboard</button>
+          <button onClick={() => setActiveTab('items')} className={`flex-1 px-4 py-3 font-bold text-sm md:text-base rounded-lg transition-all ${activeTab === 'items' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>📋 Item-wise Results</button>
         </div>
       </div>
 
@@ -185,12 +192,12 @@ export default function PublicPage() {
                   <Trophy className="text-amber-500" />
                   <span>Overall Leaderboard</span>
                 </h2>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium" value={filterProgCat} onChange={e => setFilterProgCat(e.target.value)}>
+                <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                  <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium w-full sm:w-auto" value={filterProgCat} onChange={e => setFilterProgCat(e.target.value)}>
                     <option value="all">All Categories</option>
                     {PROGRAMME_CATEGORIES.map(c => <option key={c} value={c}>{formatCategory(c)}</option>)}
                   </select>
-                  <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium" value={filterCatId} onChange={e => setFilterCatId(e.target.value)}>
+                  <select className="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-slate-700 text-sm font-medium w-full sm:w-auto" value={filterCatId} onChange={e => setFilterCatId(e.target.value)}>
                     <option value="all">All Scoring</option>
                     {data.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -203,30 +210,37 @@ export default function PublicPage() {
                     {displayBoard.map((team, idx) => {
                       if (team.displayTotal === 0 && filterCatId !== 'all') return null;
                       return (
-                      <div key={team.id} className="p-4 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center space-x-4 md:space-x-6">
-                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                            idx === 0 ? 'bg-amber-100 text-amber-700 border-2 border-amber-300' :
-                            idx === 1 ? 'bg-slate-200 text-slate-700 border-2 border-slate-300' :
-                            idx === 2 ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' :
-                            'bg-slate-100 text-slate-500'
+                      <div key={team.id} className="p-4 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-all duration-300 transform hover:-translate-y-0.5">
+                        <div className="flex items-center space-x-4 md:space-x-5">
+                          <div className={`shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-xl md:text-2xl shadow-sm ${
+                            idx === 0 ? 'bg-gradient-to-br from-yellow-300 to-amber-500 text-white border-2 border-yellow-200' :
+                            idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white border-2 border-slate-200' :
+                            idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 text-white border-2 border-orange-200' :
+                            'bg-slate-100 text-slate-500 border border-slate-200'
                           }`}>
-                            {idx + 1}
+                            {idx === 0 ? '🏆' : idx + 1}
                           </div>
+                          
+                          {team.logo_url && (
+                             <img src={team.logo_url} className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-slate-200 object-cover hidden sm:block" />
+                          )}
+
                           <div>
-                            <h3 className="font-bold text-lg text-slate-800">{team.name}</h3>
+                            <h3 className="font-bold text-lg md:text-xl text-slate-800">{team.name}</h3>
                             {filterCatId === 'all' && (
-                              <div className="flex space-x-3 text-sm text-slate-500 mt-1">
-                                <span title="1st Prizes">🥇 {team.firstCount}</span>
-                                <span title="2nd Prizes">🥈 {team.secondCount}</span>
-                                <span title="3rd Prizes">🥉 {team.thirdCount}</span>
+                              <div className="flex space-x-3 md:space-x-4 text-xs md:text-sm text-slate-500 mt-1">
+                                <span title="1st Prizes" className="flex items-center space-x-1"><span className="text-amber-500 text-base">🥇</span> <span className="font-semibold">{team.firstCount}</span></span>
+                                <span title="2nd Prizes" className="flex items-center space-x-1"><span className="text-slate-400 text-base">🥈</span> <span className="font-semibold">{team.secondCount}</span></span>
+                                <span title="3rd Prizes" className="flex items-center space-x-1"><span className="text-orange-500 text-base">🥉</span> <span className="font-semibold">{team.thirdCount}</span></span>
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-2xl md:text-3xl text-indigo-600">{team.displayTotal}</div>
-                          <div className="text-xs text-slate-500 uppercase font-bold">Points</div>
+                          <div className={`font-black text-3xl md:text-4xl ${idx === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
+                            {team.displayTotal}
+                          </div>
+                          <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-wider">Points</div>
                         </div>
                       </div>
                     )})}
@@ -277,64 +291,64 @@ export default function PublicPage() {
         )}
 
         {activeTab === 'items' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in-up">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
                 <ListFilter className="text-indigo-500" />
                 <span>Item-wise Results</span>
               </h2>
-              <div className="relative w-full md:w-64">
+              <div className="relative w-full md:w-72">
                 <input 
                   type="text" 
                   placeholder="Search events..." 
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500"
+                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-sm font-medium shadow-sm"
                   value={itemSearch}
                   onChange={e => setItemSearch(e.target.value)}
                 />
-                <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
             </div>
 
             {filteredItems.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
                 No results found matching your search.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.map(result => (
-                  <div key={result.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex justify-between items-center">
-                      <h3 className="font-bold text-lg text-slate-800">{result.item_name}</h3>
-                      <div className="flex flex-col items-end space-y-1">
-                        <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold uppercase">{result.programme_category ? result.programme_category.replace('_', ' ') : 'General'}</span>
-                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold uppercase">{result.category_name}</span>
+                  <div key={result.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-5 py-4 flex flex-col space-y-2">
+                      <h3 className="font-bold text-lg text-slate-800 line-clamp-1" title={result.item_name}>{result.item_name}</h3>
+                      <div className="flex space-x-2">
+                        <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md font-bold uppercase tracking-wide">{result.programme_category ? result.programme_category.replace('_', ' ') : 'General'}</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-bold uppercase tracking-wide">{result.category_name}</span>
                       </div>
                     </div>
-                    <div className="p-4 space-y-3">
+                    <div className="p-5 space-y-4">
                       {result.first_team && (
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">1</div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{result.first_candidate || '-'}</p>
-                            <p className="text-xs font-medium text-amber-600">{result.first_team} ({result.first_points} pts)</p>
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm border border-amber-200 shadow-sm">1</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-800 text-sm truncate">{result.first_candidate || '-'}</p>
+                            <p className="text-xs font-semibold text-amber-600 truncate">{result.first_team} ({result.first_points} pts)</p>
                           </div>
                         </div>
                       )}
                       {result.second_team && (
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm">2</div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{result.second_candidate || '-'}</p>
-                            <p className="text-xs font-medium text-slate-500">{result.second_team} ({result.second_points} pts)</p>
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm border border-slate-200 shadow-sm">2</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-800 text-sm truncate">{result.second_candidate || '-'}</p>
+                            <p className="text-xs font-semibold text-slate-500 truncate">{result.second_team} ({result.second_points} pts)</p>
                           </div>
                         </div>
                       )}
                       {result.third_team && (
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-sm">3</div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{result.third_candidate || '-'}</p>
-                            <p className="text-xs font-medium text-orange-600">{result.third_team} ({result.third_points} pts)</p>
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center font-bold text-sm border border-orange-200 shadow-sm">3</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-800 text-sm truncate">{result.third_candidate || '-'}</p>
+                            <p className="text-xs font-semibold text-orange-600 truncate">{result.third_team} ({result.third_points} pts)</p>
                           </div>
                         </div>
                       )}
