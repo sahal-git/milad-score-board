@@ -24,8 +24,8 @@ function InstitutionSidebar({ mobileOpen, setMobileOpen, onLogout, user }) {
   const location = useLocation();
   const navItems = [
     { name: 'Add Result', path: '/', icon: PlusCircle },
+    { name: 'Bulk Import', path: '/import', icon: UploadCloud },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Add Result', path: '/results/add', icon: PlusCircle },
     { name: 'Results', path: '/results', icon: Trophy },
     { name: 'Teams', path: '/teams', icon: Users },
     { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
