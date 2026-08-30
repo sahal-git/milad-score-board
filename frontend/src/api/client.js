@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export const apiClient = async (endpoint, options = {}) => {
   const method = options.method || 'GET';
@@ -298,6 +298,7 @@ export const apiClient = async (endpoint, options = {}) => {
           const payload = {
             name: body.name,
             code: body.code,
+            place: body.place,
             logo_url: body.logo_url || null,
             public_slug: body.code.toLowerCase(),
             admin_username: body.username,

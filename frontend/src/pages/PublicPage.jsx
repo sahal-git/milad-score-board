@@ -44,7 +44,7 @@ export default function PublicPage() {
       try {
         const { data: inst, error: instErr } = await supabase
           .from('institutions')
-          .select('id, name, public_score_enabled, logo_url')
+          .select('id, name, place, public_score_enabled, logo_url')
           .eq('public_slug', code.toLowerCase())
           .single();
 
@@ -121,6 +121,7 @@ export default function PublicPage() {
 
         setData({
           institutionName: inst.name,
+          place: inst.place,
           logo_url: inst.logo_url,
           categories: catData || [],
           leaderboard: leaderboard.sort((a, b) => b.totalPoints - a.totalPoints),
@@ -186,6 +187,9 @@ export default function PublicPage() {
             <div>
               <h2 className={`text-indigo-300 font-bold uppercase tracking-wider transition-all duration-300 ${isScrolled ? 'hidden' : 'text-xs md:text-sm mb-1'}`}>Live Festival Results</h2>
               <h1 className={`font-extrabold tracking-tight transition-all duration-300 ${isScrolled ? 'text-lg md:text-2xl line-clamp-1' : 'text-2xl md:text-4xl'}`}>{data.institutionName}</h1>
+              {data.place && (
+                 <p className={`text-indigo-200 font-medium transition-all duration-300 ${isScrolled ? 'hidden' : 'text-sm md:text-base mt-1'}`}>{data.place}</p>
+              )}
             </div>
           </div>
           <div className={`flex items-center bg-black/20 backdrop-blur-sm rounded-full border border-white/10 transition-all duration-300 ${isScrolled ? 'px-3 py-1.5' : 'px-4 py-2'}`}>

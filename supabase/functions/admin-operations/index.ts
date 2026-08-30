@@ -58,12 +58,12 @@ serve(async (req) => {
     const { action, payload } = body;
 
     if (action === 'create_institution') {
-      const { name, code, logo_url, public_slug, admin_username, admin_password } = payload;
+      const { name, code, logo_url, place, public_slug, admin_username, admin_password } = payload;
       
       // 1. Create Institution
       const { data: inst, error: instError } = await adminClient
         .from('institutions')
-        .insert([{ name, code, logo_url, public_slug, status: 'active' }])
+        .insert([{ name, code, logo_url, place, public_slug, status: 'active' }])
         .select()
         .single();
       if (instError) throw instError;

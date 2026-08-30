@@ -11,7 +11,7 @@ export default function InstitutionsList() {
   const [filter, setFilter] = useState('all'); // all, active, suspended
   
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', code: '', username: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ name: '', code: '', place: '', username: '', password: '', confirmPassword: '' });
   const [logoFile, setLogoFile] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -59,7 +59,7 @@ export default function InstitutionsList() {
         body: JSON.stringify({ ...formData, logo_url: logoUrl })
       });
       setShowModal(false);
-      setFormData({ name: '', code: '', username: '', password: '', confirmPassword: '' });
+      setFormData({ name: '', code: '', place: '', username: '', password: '', confirmPassword: '' });
       setLogoFile(null);
       fetchInstitutions();
       navigate(`/institutions/${result.id}`);
@@ -172,6 +172,10 @@ export default function InstitutionsList() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Institution Code *</label>
                 <input required type="text" className="w-full border border-slate-300 rounded px-3 py-2 uppercase" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Place / Subtitle (Optional)</label>
+                <input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={formData.place} onChange={e => setFormData({...formData, place: e.target.value})} placeholder="e.g. Kozhikode" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Admin Username *</label>
