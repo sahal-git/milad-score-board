@@ -8,7 +8,7 @@ export default function Teams() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
-  const [formData, setFormData] = useState({ name: '', short_name: '', logo: '' });
+  const [formData, setFormData] = useState({ name: '', short_name: '', logo_url: '' });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Teams() {
       }
       setShowForm(false);
       setEditingId(null);
-      setFormData({ name: '', short_name: '', logo: '' });
+      setFormData({ name: '', short_name: '', logo_url: '' });
       fetchTeams();
     } catch (err) {
       setError(err.message);
@@ -61,7 +61,7 @@ export default function Teams() {
   };
 
   const handleEdit = (team) => {
-    setFormData({ name: team.name, short_name: team.short_name, logo: team.logo });
+    setFormData({ name: team.name, short_name: team.short_name, logo_url: team.logo_url });
     setEditingId(team.id);
     setShowForm(true);
   };
@@ -115,7 +115,7 @@ export default function Teams() {
                 onClick={() => {
                   setShowForm(false);
                   setEditingId(null);
-                  setFormData({ name: '', short_name: '', logo: '' });
+                  setFormData({ name: '', short_name: '', logo_url: '' });
                 }}
                 className="px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
               >
