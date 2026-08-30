@@ -175,7 +175,23 @@ export default function ManageInstitution() {
               <input type="file" accept="image/*" onChange={e => setEditLogoFile(e.target.files[0])} className="w-full text-sm" />
               {editForm.logo_url && !editLogoFile && <p className="text-xs text-slate-500 mt-1">Has existing logo</p>}
             </div>
-          </div>
+              <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Primary Theme Color</label>
+                  <div className="flex items-center space-x-2">
+                    <input type="color" className="h-10 w-10 border border-slate-300 rounded cursor-pointer" value={editForm.theme_color_1 || '#4f46e5'} onChange={e => setEditForm({...editForm, theme_color_1: e.target.value})} />
+                    <input type="text" className="w-full border border-slate-300 rounded px-3 py-2 font-mono" value={editForm.theme_color_1 || '#4f46e5'} onChange={e => setEditForm({...editForm, theme_color_1: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Secondary Theme Color</label>
+                  <div className="flex items-center space-x-2">
+                    <input type="color" className="h-10 w-10 border border-slate-300 rounded cursor-pointer" value={editForm.theme_color_2 || '#312e81'} onChange={e => setEditForm({...editForm, theme_color_2: e.target.value})} />
+                    <input type="text" className="w-full border border-slate-300 rounded px-3 py-2 font-mono" value={editForm.theme_color_2 || '#312e81'} onChange={e => setEditForm({...editForm, theme_color_2: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+            </div>
           <div className="flex justify-end pt-4">
             <button type="submit" disabled={savingEdit} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-70 flex items-center space-x-2">
               <Save size={18} /><span>{savingEdit ? 'Saving...' : 'Save Changes'}</span>
