@@ -327,7 +327,7 @@ export const apiClient = async (endpoint, options = {}) => {
           return { success: true };
         }
         
-        if (method === 'PUT' && action) {
+        if (method === 'PUT' && (action === 'suspend' || action === 'activate')) {
            const { data, error } = await supabase.functions.invoke('admin-operations', {
              body: { action: action === 'suspend' ? 'suspend_institution' : 'activate_institution', payload: { id } }
            });
