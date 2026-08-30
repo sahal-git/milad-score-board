@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Trophy, Settings, List, PlusCircle, Menu, X, LogOut, Shield, ShieldAlert, MonitorUp } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, Settings, List, PlusCircle, Menu, X, LogOut, Shield, ShieldAlert, MonitorUp , UploadCloud } from 'lucide-react';
 import { apiClient } from './api/client';
 import { supabase } from './lib/supabase';
 
