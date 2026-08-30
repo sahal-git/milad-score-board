@@ -344,6 +344,18 @@ export const apiClient = async (endpoint, options = {}) => {
            if (data.error) throw new Error(data.error);
            return { success: true };
         }
+        
+        if (method === 'PUT' && action === 'edit') {
+           const { data, error } = await supabase.from('institutions').update({
+             name: body.name,
+             code: body.code,
+             place: body.place,
+             public_slug: body.public_slug,
+             logo_url: body.logo_url
+           }).eq('id', id).select().single();
+           if (error) throw error;
+           return data;
+        }
       }
     }
 
