@@ -6,7 +6,6 @@ import { supabase } from './lib/supabase';
 
 import Dashboard from './pages/Dashboard';
 import Teams from './pages/Teams';
-import Events from './pages/Events';
 import AddResult from './pages/AddResult';
 import EditResult from './pages/EditResult';
 import Results from './pages/Results';
@@ -23,9 +22,9 @@ import ManageInstitution from './pages/ManageInstitution';
 function InstitutionSidebar({ mobileOpen, setMobileOpen, onLogout, user }) {
   const location = useLocation();
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Programmes', path: '/events', icon: List },
-    { name: 'Add Result', path: '/results/add', icon: PlusCircle },
+    { name: 'Add Result', path: '/', icon: PlusCircle },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Add Result', path: '/results/add', icon: PlusCircle },
     { name: 'Results', path: '/results', icon: Trophy },
     { name: 'Teams', path: '/teams', icon: Users },
     { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
@@ -246,15 +245,14 @@ function App() {
                 </Routes>
               ) : (
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<AddResult />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/teams" element={<Teams />} />
-                  <Route path="/events" element={<Events />} />
-                  <Route path="/results/add" element={<AddResult />} />
                   <Route path="/results/edit/:id" element={<EditResult />} />
                   <Route path="/results" element={<Results />} />
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<Dashboard />} />
+                  <Route path="*" element={<AddResult />} />
                 </Routes>
               )}
             </div>

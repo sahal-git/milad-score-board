@@ -3,8 +3,17 @@ import { apiClient } from '../api/client';
 import { Trophy, Users, List, Activity, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const PROGRAMME_CATEGORIES = [
+  'kiddies', 'sub_junior', 'junior', 'senior', 'super_senior', 'general'
+];
+
+const formatCategory = (str) => {
+  if (!str) return '';
+  return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 export default function Dashboard() {
-  const [stats, setStats] = useState({ totalTeams: 0, totalItems: 0, totalResults: 0, institutionName: '', institutionCode: '' });
+  const [stats, setStats] = useState({ totalTeams: 0, totalItems: 0, totalResults: 0, institutionName: '', institutionCode: '', programmeCategories: {} });
   const [leaderboard, setLeaderboard] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,134 +56,89 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div className="flex flex-col">
-          <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">{stats.institutionName}</h2>
-          <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+          <p className="text-slate-500 mt-1">Welcome back, here's the current status for <span className="font-semibold text-slate-700">{stats.institutionName}</span></p>
         </div>
         {stats.institutionCode && (
           <a 
-            href={`/public/${stats.institutionCode}`} 
-            target="_blank" 
+            href={`/public/${stats.institutionCode}`}
+            target="_blank"
             rel="noreferrer"
-            className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-semibold hover:bg-indigo-100 transition-colors"
+            className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
           >
             <span>View Public Page</span>
-            <ExternalLink size={18} />
+            <ExternalLink size={16} />
           </a>
         )}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Teams" value={stats.totalTeams} icon={Users} color="bg-blue-500" />
-        <StatCard title="Total Events" value={stats.totalItems} icon={Activity} color="bg-green-500" />
-        <StatCard title="Total Results" value={stats.totalResults} icon={List} color="bg-purple-500" />
-        <StatCard title="Leading Team" value={topTeam} icon={Trophy} color="bg-amber-500" />
+        <StatCard title="Programmes" value={stats.totalItems} icon={List} color="bg-indigo-500" />
+        <StatCard title="Results Entered" value={stats.totalResults} icon={Activity} color="bg-emerald-500" />
+        <StatCard title="Top Team" value={topTeam} icon={Trophy} color="bg-amber-500" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        
-        {/* Overall Leaderboard */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h2 className="font-semibold text-slate-800">Overall Top Teams</h2>
-            <Link to="/leaderboard" className="text-sm text-indigo-600 font-medium hover:underline">View All</Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Leaderboard Summary */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-slate-800">Top Teams</h2>
+            <Link to="/leaderboard" className="text-indigo-600 text-sm font-medium hover:underline">View Full Leaderboard</Link>
           </div>
-          <div className="p-0">
+          <div className="divide-y divide-slate-100">
             {top3.length === 0 ? (
-              <p className="p-6 text-center text-slate-500">No teams yet</p>
+              <div className="p-6 text-center text-slate-500">No scores yet.</div>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {top3.map((team, idx) => (
-                  <div key={team.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        idx === 0 ? 'bg-amber-100 text-amber-700' :
-                        idx === 1 ? 'bg-slate-200 text-slate-700' :
-                        'bg-orange-100 text-orange-800'
-                      }`}>
-                        {idx + 1}
-                      </div>
-                      <span className="font-semibold text-slate-700">{team.name}</span>
+              top3.map((team, idx) => (
+                <div key={team.id} className="p-4 px-6 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      idx === 0 ? 'bg-amber-100 text-amber-700' :
+                      idx === 1 ? 'bg-slate-200 text-slate-700' :
+                      'bg-orange-100 text-orange-800'
+                    }`}>
+                      {idx + 1}
                     </div>
-                    <span className="font-bold text-lg">{team.totalPoints} pts</span>
+                    <span className="font-bold text-slate-800 text-lg">{team.name}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-indigo-600">{team.totalPoints}</span>
+                    <span className="text-xs text-slate-500 font-bold ml-1 uppercase">Pts</span>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
 
-        {/* Scoring Categories Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h2 className="font-semibold text-slate-800">Scoring Categories</h2>
+        {/* Programme Category Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-lg font-bold text-slate-800">Programmes by Category</h2>
           </div>
-          <div className="p-0 divide-y divide-slate-100">
-            {categories.length === 0 ? (
-              <p className="p-6 text-center text-slate-500">No categories</p>
-            ) : (
-              categories.map(cat => {
-                const getPoints = (team) => team.breakdown ? team.breakdown.filter(b => b.category_id === cat.id).reduce((s, b) => s + b.points, 0) : 0;
-                const sortedByCat = [...leaderboard].sort((a, b) => getPoints(b) - getPoints(a));
-                const catTopTeam = sortedByCat.length > 0 && getPoints(sortedByCat[0]) > 0 ? sortedByCat[0] : null;
-                return (
-                  <div key={cat.id} className="p-4">
-                    <h3 className="font-bold text-slate-800">{cat.name}</h3>
-                    <div className="flex justify-between mt-2 text-sm">
-                      <span className="text-slate-500">Top Team:</span>
-                      <span className="font-medium text-indigo-600">{catTopTeam ? `${catTopTeam.name} (${getPoints(catTopTeam)} pts)` : '-'}</span>
-                    </div>
+          <div className="p-4 space-y-4">
+            {PROGRAMME_CATEGORIES.map(cat => {
+              const data = stats.programmeCategories?.[cat] || { total: 0 };
+              if (data.total === 0) return null;
+              
+              return (
+                <div key={cat} className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex justify-between items-center">
+                  <span className="font-semibold text-slate-700 text-sm">{formatCategory(cat)}</span>
+                  <div className="text-right">
+                    <span className="text-lg font-bold text-indigo-600">{data.total}</span>
                   </div>
-                );
-              })
+                </div>
+              );
+            })}
+            
+            {(!stats.programmeCategories || Object.values(stats.programmeCategories).every(c => c.total === 0)) && (
+              <div className="text-center text-slate-500 py-8">No programmes recorded.</div>
             )}
           </div>
-        </div>
-        
-        {/* Programme Categories Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h2 className="font-semibold text-slate-800">Programme Categories</h2>
-            <Link to="/events" className="text-sm text-indigo-600 font-medium hover:underline">Manage</Link>
-          </div>
-          <div className="p-0">
-            {stats.programmeCategories?.length === 0 ? (
-              <p className="p-6 text-center text-slate-500">No programmes</p>
-            ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="bg-slate-50/50 text-slate-500">
-                    <th className="p-3 font-medium">Category</th>
-                    <th className="p-3 font-medium text-right">Prog.</th>
-                    <th className="p-3 font-medium text-right">Done</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {stats.programmeCategories?.map(c => (
-                    <tr key={c.name} className="hover:bg-slate-50">
-                      <td className="p-3 font-medium text-slate-700 capitalize">{c.name.replace('_', ' ')}</td>
-                      <td className="p-3 text-right">{c.total}</td>
-                      <td className="p-3 text-right text-indigo-600 font-medium">{c.completed}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center items-center p-8 space-y-4 lg:col-span-1">
-          <div className="bg-indigo-50 text-indigo-600 p-4 rounded-full">
-            <Trophy size={48} />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800">Ready to score?</h2>
-          <p className="text-slate-500 text-center max-w-sm">Enter results quickly during the live festival without pre-registering candidates.</p>
-          <Link to="/results/add" className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors w-full md:w-auto text-center">
-            Add New Result
-          </Link>
         </div>
       </div>
     </div>

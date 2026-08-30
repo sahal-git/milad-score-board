@@ -1,95 +1,59 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
-import { Save } from 'lucide-react';
+import { Save, Loader } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const PositionSection = ({ title, pos, color, formData, setFormData, teams, points }) => (
-  <div className={`p-5 rounded-xl border ${color} space-y-4 bg-white relative`}>
-    <div className="flex justify-between items-center">
-      <h3 className="font-bold text-lg">{title}</h3>
-      {points !== undefined && (
-        <span className="bg-slate-100 px-2 py-1 rounded text-sm font-bold text-slate-700">
-          {points} pts
-        </span>
-      )}
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">Candidate Name (Optional)</label>
-      <input
-        type="text"
-        list="candidate-suggestions"
-        className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
-        placeholder="e.g. Ahmed Faiz"
-        value={formData[`${pos}_candidate_name`]}
-        onChange={e => setFormData({...formData, [`${pos}_candidate_name`]: e.target.value})}
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">Team *</label>
-      <select
-        required
-        className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg bg-white"
-        value={formData[`${pos}_team_id`]}
-        onChange={e => setFormData({...formData, [`${pos}_team_id`]: e.target.value})}
-      >
-        <option value="">Select Team</option>
-        {teams.map(team => (
-          <option key={team.id} value={team.id}>{team.name}</option>
-        ))}
-      </select>
-    </div>
-  </div>
-);
+const PROGRAMME_CATEGORIES = [
+  'kiddies', 'sub_junior', 'junior', 'senior', 'super_senior', 'general'
+];
+
+const formatCategory = (str) => {
+  if (!str) return '';
+  return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
 
 export default function EditResult() {
-  const navigate = useNavigate();
   const { id } = useParams();
-  
+  const navigate = useNavigate();
   const [teams, setTeams] = useState([]);
-  const [candidates, setCandidates] = useState([]);
   const [categories, setCategories] = useState([]);
   
   const [formData, setFormData] = useState({
-    item_name: '',
-    category_id: '',
-    first_candidate_name: '',
-    first_team_id: '',
-    second_candidate_name: '',
-    second_team_id: '',
-    third_candidate_name: '',
-    third_team_id: '',
+    programme_category: 'general',
+    programme: '',
+    candidate_name: '',
+    team_id: '',
+    scoring_category_id: '',
+    position: '1',
   });
 
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [teamsData, candidatesData, categoriesData, resultData] = await Promise.all([
+        const [teamsData, categoriesData, resultData] = await Promise.all([
           apiClient('/teams'),
-          apiClient('/candidates'),
           apiClient('/categories'),
           apiClient(`/results/${id}`)
         ]);
+        
         setTeams(teamsData);
-        setCandidates(candidatesData);
         setCategories(categoriesData);
+        
         setFormData({
-          item_name: resultData.item_name,
-          programme_category: resultData.programme_category,
-          category_id: resultData.category_id,
-          first_candidate_name: resultData.first_candidate_name || '',
-          first_team_id: resultData.first_team_id || '',
-          second_candidate_name: resultData.second_candidate_name || '',
-          second_team_id: resultData.second_team_id || '',
-          third_candidate_name: resultData.third_candidate_name || '',
-          third_team_id: resultData.third_team_id || '',
+          programme_category: resultData.programme_category || 'general',
+          programme: resultData.programme || '',
+          candidate_name: resultData.candidate_name || '',
+          team_id: resultData.team_id || '',
+          scoring_category_id: resultData.scoring_category_id || '',
+          position: String(resultData.position) || '1',
         });
       } catch (err) {
-        console.error('Failed to load form data', err);
-        setError('Failed to load result. It may have been deleted.');
+        console.error('Failed to load data', err);
+        setError('Failed to load result data');
       } finally {
         setLoading(false);
       }
@@ -97,120 +61,152 @@ export default function EditResult() {
     fetchData();
   }, [id]);
 
+  const calculatePoints = () => {
+    const cat = categories.find(c => c.id === formData.scoring_category_id);
+    if (!cat) return 0;
+    if (formData.position === '1') return cat.first_points;
+    if (formData.position === '2') return cat.second_points;
+    if (formData.position === '3') return cat.third_points;
+    return 0;
+  };
+
+  const currentPoints = calculatePoints();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    // basic validation
-    const selectedTeams = [formData.first_team_id, formData.second_team_id, formData.third_team_id].filter(Boolean);
-    if (new Set(selectedTeams).size !== selectedTeams.length) {
-      setError('A team cannot occupy multiple positions in the same event.');
+    if (!formData.programme.trim()) {
+      setError('Programme is required');
+      return;
+    }
+    if (!formData.team_id) {
+      setError('Team is required');
       return;
     }
 
     setSaving(true);
     try {
+      const resultData = {
+        ...formData,
+        programme: formData.programme.trim(),
+        candidate_name: formData.candidate_name.trim(),
+        position: parseInt(formData.position, 10),
+        points_awarded: currentPoints
+      };
+      
       await apiClient(`/results/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(resultData),
       });
-      navigate('/results');
+      
+      navigate('/');
     } catch (err) {
       setError(err.message);
       setSaving(false);
     }
   };
 
-  const formatCategory = (cat) => cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : '';
-  const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const selectedItem = { name: formData.item_name, programme_category: formData.programme_category };
-
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading result...</div>;
+  if (loading) return <div className="p-8 text-center"><Loader className="animate-spin mx-auto text-indigo-500" /></div>;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Edit Result</h1>
-        <button
-          onClick={() => navigate('/results')}
-          className="text-slate-500 hover:text-slate-700 font-medium text-sm"
-        >
-          Cancel
-        </button>
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-800">Edit Result</h1>
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">{error}</div>}
-      
-      <datalist id="candidate-suggestions">
-        {candidates.map(c => <option key={c.id} value={c.name} />)}
-      </datalist>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Programme</label>
-            <div className="w-full border border-slate-200 bg-slate-50 rounded-lg px-4 py-3 text-xl font-semibold text-slate-600">
-              {formData.item_name}
-            </div>
-            {formData.programme_category && (
-              <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 inline-block px-2 py-1 rounded">
-                Programme Category: {formatCategory(formData.programme_category)}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Scoring Category *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Programme Category</label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-xl font-semibold focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-              value={formData.category_id}
-              onChange={e => setFormData({...formData, category_id: e.target.value})}
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={formData.programme_category}
+              onChange={e => setFormData({...formData, programme_category: e.target.value})}
             >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
+              {PROGRAMME_CATEGORIES.map(c => <option key={c} value={c}>{formatCategory(c)}</option>)}
             </select>
-            <p className="text-xs text-slate-500 mt-2">Determines points awarded for positions.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Programme *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Quran Recitation"
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={formData.programme}
+              onChange={e => setFormData({...formData, programme: e.target.value})}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <PositionSection 
-            title="🥇 1st Place" 
-            pos="first" 
-            color="border-amber-300 ring-1 ring-amber-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams}
-            points={selectedCategory?.first_points}
-          />
-          <PositionSection 
-            title="🥈 2nd Place" 
-            pos="second" 
-            color="border-slate-300 ring-1 ring-slate-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams} 
-            points={selectedCategory?.second_points}
-          />
-          <PositionSection 
-            title="🥉 3rd Place" 
-            pos="third" 
-            color="border-orange-300 ring-1 ring-orange-100" 
-            formData={formData} 
-            setFormData={setFormData} 
-            teams={teams} 
-            points={selectedCategory?.third_points}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Candidate Name (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Muhammad Sahal"
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={formData.candidate_name}
+              onChange={e => setFormData({...formData, candidate_name: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Team *</label>
+            <select
+              required
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={formData.team_id}
+              onChange={e => setFormData({...formData, team_id: e.target.value})}
+            >
+              <option value="">Select Team</option>
+              {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>
+          </div>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={saving || !formData.category_id}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-70"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-100 items-end">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Score Category</label>
+            <select
+              required
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+              value={formData.scoring_category_id}
+              onChange={e => setFormData({...formData, scoring_category_id: e.target.value})}
+            >
+              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Position</label>
+            <select
+              required
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-bold text-indigo-700"
+              value={formData.position}
+              onChange={e => setFormData({...formData, position: e.target.value})}
+            >
+              <option value="1">1st Place</option>
+              <option value="2">2nd Place</option>
+              <option value="3">3rd Place</option>
+            </select>
+          </div>
+          <div className="text-right flex flex-col justify-center h-[50px]">
+            <span className="text-sm font-medium text-slate-500">Points Awarded</span>
+            <div className="text-3xl font-black text-indigo-600">{currentPoints}</div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition flex items-center justify-center space-x-2 disabled:opacity-70 text-lg shadow-sm hover:shadow-md"
         >
-          <Save size={24} />
-          <span>{saving ? 'Saving...' : 'Update Result'}</span>
+          {saving ? <Loader className="animate-spin" /> : <Save size={24} />}
+          <span>Save Changes</span>
         </button>
       </form>
     </div>
