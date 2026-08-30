@@ -19,7 +19,7 @@ export default function ManageInstitution() {
   const [showDelete, setShowDelete] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', code: '', place: '', logo_url: '' });
+  const [editForm, setEditForm] = useState({ name: '', code: '', place: '', logo_url: '', theme_color_1: '#4f46e5', theme_color_2: '#312e81' });
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -33,7 +33,7 @@ export default function ManageInstitution() {
       const found = data.find(i => i.id === id);
       if (found) {
         setInstitution(found);
-        setEditForm({ name: found.name, code: found.code, place: found.place || '', logo_url: found.logo_url || '' });
+        setEditForm({ name: found.name, code: found.code, place: found.place || '', logo_url: found.logo_url || '', theme_color_1: found.theme_color_1 || '#4f46e5', theme_color_2: found.theme_color_2 || '#312e81' });
       }
     } catch (err) {
       console.error(err);
@@ -135,7 +135,7 @@ export default function ManageInstitution() {
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => {
-              if (isEditing) { setIsEditing(false); setEditLogoFile(null); setEditForm({ name: institution.name, code: institution.code, place: institution.place || '', logo_url: institution.logo_url || '' }); }
+              if (isEditing) { setIsEditing(false); setEditLogoFile(null); setEditForm({ name: institution.name, code: institution.code, place: institution.place || '', logo_url: institution.logo_url || '', theme_color_1: institution.theme_color_1 || '#4f46e5', theme_color_2: institution.theme_color_2 || '#312e81' }); }
               else setIsEditing(true);
             }}
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 font-medium ${isEditing ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}

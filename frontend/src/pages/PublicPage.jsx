@@ -44,7 +44,7 @@ export default function PublicPage() {
       try {
         const { data: inst, error: instErr } = await supabase
           .from('institutions')
-          .select('id, name, place, public_score_enabled, logo_url')
+          .select('id, name, place, public_score_enabled, logo_url, theme_color_1, theme_color_2')
           .eq('public_slug', code.toLowerCase())
           .single();
 
@@ -178,24 +178,24 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      <header ref={headerRef} className={`bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-lg fixed top-0 left-0 right-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`}>
+      <header ref={headerRef} className={`text-white shadow-lg fixed top-0 left-0 right-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`} style={{ background: `linear-gradient(to right, ${data.themeColor1 || '#312e81'}, ${data.themeColor2 || '#4c1d95'})` }}>
         <div className={`max-w-5xl mx-auto flex justify-between items-center transition-all duration-300 ${isScrolled ? 'flex-row' : 'flex-col md:flex-row gap-6'}`}>
           <div className={`flex items-center text-left ${isScrolled ? 'gap-3' : 'flex-col md:flex-row gap-4 w-full md:w-auto text-center md:text-left'}`}>
             {data.logo_url && (
               <img src={data.logo_url} alt="Logo" className={`rounded-full border-white shadow-md bg-white object-cover transition-all duration-300 ${isScrolled ? 'w-10 h-10 border-2' : 'w-20 h-20 md:w-24 md:h-24 border-4'}`} />
             )}
             <div>
-              <h2 className={`text-indigo-300 font-bold uppercase tracking-wider transition-all duration-300 ${isScrolled ? 'hidden' : 'text-xs md:text-sm mb-1'}`}>Live Festival Results</h2>
+              <h2 className={`text-white/80 font-bold uppercase tracking-wider transition-all duration-300 ${isScrolled ? 'hidden' : 'text-xs md:text-sm mb-1'}`}>Live Festival Results</h2>
               <h1 className={`font-extrabold tracking-tight transition-all duration-300 ${isScrolled ? 'text-lg md:text-2xl line-clamp-1' : 'text-2xl md:text-4xl'}`}>{data.institutionName}</h1>
               {data.place && (
-                 <p className={`text-indigo-200 font-medium transition-all duration-300 ${isScrolled ? 'hidden' : 'text-sm md:text-base mt-1'}`}>{data.place}</p>
+                 <p className={`text-white/70 font-medium transition-all duration-300 ${isScrolled ? 'hidden' : 'text-sm md:text-base mt-1'}`}>{data.place}</p>
               )}
             </div>
           </div>
           <div className={`flex items-center bg-black/20 backdrop-blur-sm rounded-full border border-white/10 transition-all duration-300 ${isScrolled ? 'px-3 py-1.5' : 'px-4 py-2'}`}>
             <div className={`rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)] ${isScrolled ? 'w-2 h-2 mr-1.5' : 'w-2.5 h-2.5 mr-2'}`}></div>
-            <span className={`font-medium text-indigo-50 ${isScrolled ? 'text-xs hidden sm:inline' : 'text-sm'}`}>Live Updates</span>
-            {isScrolled && <span className="font-medium text-indigo-50 text-[10px] uppercase sm:hidden">Live</span>}
+            <span className={`font-medium text-white/90 ${isScrolled ? 'text-xs hidden sm:inline' : 'text-sm'}`}>Live Updates</span>
+            {isScrolled && <span className="font-medium text-white/90 text-[10px] uppercase sm:hidden">Live</span>}
           </div>
         </div>
       </header>
@@ -279,16 +279,16 @@ export default function PublicPage() {
             </div>
 
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-indigo-600 rounded-xl p-6 text-white shadow-md relative overflow-hidden">
+              <div className="rounded-xl p-6 text-white shadow-md relative overflow-hidden" style={{ backgroundColor: data.themeColor1 || '#4f46e5' }}>
                 <div className="absolute -right-4 -top-4 opacity-10"><Trophy size={120} /></div>
-                <h3 className="text-indigo-200 font-semibold mb-1 relative z-10">Total Entries</h3>
+                <h3 className="text-white/70 font-semibold mb-1 relative z-10">Total Entries</h3>
                 <div className="text-4xl font-bold relative z-10">{data.allResults.length}</div>
               </div>
 
               {/* Recent Results Column */}
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
-                  <Medal className="text-indigo-500" />
+                  <Medal className="text-slate-500" />
                   <span>Recent Results</span>
                 </h2>
                 
@@ -331,7 +331,7 @@ export default function PublicPage() {
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
-                <ListFilter className="text-indigo-500" />
+                <ListFilter className="text-slate-500" />
                 <span>Item-wise Results</span>
               </h2>
               <div className="relative w-full md:w-72">
