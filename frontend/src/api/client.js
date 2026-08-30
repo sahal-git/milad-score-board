@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+﻿import { supabase } from '../lib/supabase';
 
 export const apiClient = async (endpoint, options = {}) => {
   const method = options.method || 'GET';
@@ -51,7 +51,6 @@ export const apiClient = async (endpoint, options = {}) => {
         'general': { total: 0, completed: 0 }
       };
 
-      // Since we don't have predefined events, we'll just show the count of unique programmes per category
       const catCount = {};
       (resultsData || []).forEach(r => {
          const key = r.programme_category + '|' + (r.programme || '').toLowerCase().trim();
@@ -144,31 +143,43 @@ export const apiClient = async (endpoint, options = {}) => {
       }
     }
 
-    // /items
-    if (r.position === 2) {
-            grouped[itemId].second_team_name = r.teams?.name;
-            grouped[itemId].second_points = r.points_awarded;
-          } else if (r.position === 3) {
-            grouped[itemId].third_team_name = r.teams?.name;
-            grouped[itemId].third_points = r.points_awarded;
-          }
-        }
-        return Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // /results
+    if (endpoint === '/results') {
+      if (method === 'GET') {
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
+        const { data, error } = await supabase
+          .from('results')
+          .select(`
+            id, programme_category, programme, candidate_name, position, points_awarded, created_at,
+            scoring_categories (id, name),
+            teams (id, name)
+          `)
+          .eq('institution_id', instId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
       }
       
       if (method === 'POST') {
+        const profile = await ensureAuth();
+        const instId = profile.role === 'super_admin' ? openInstId : profile.institution_id;
         const payload = options.body ? JSON.parse(options.body) : {};
-        const { data, error } = await supabase.rpc('create_result', {
-          p_institution_id: instId,
-          p_item_id: payload.item_id,
-          p_category_id: payload.category_id,
-          p_first_candidate_name: payload.first_candidate_name || null,
-          p_first_team_id: payload.first_team_id || null,
-          p_second_candidate_name: payload.second_candidate_name || null,
-          p_second_team_id: payload.second_team_id || null,
-          p_third_candidate_name: payload.third_candidate_name || null,
-          p_third_team_id: payload.third_team_id || null
-        });
+        
+        const { data, error } = await supabase
+          .from('results')
+          .insert({
+             institution_id: instId,
+             programme_category: payload.programme_category,
+             programme: payload.programme,
+             candidate_name: payload.candidate_name,
+             team_id: payload.team_id,
+             scoring_category_id: payload.scoring_category_id,
+             position: payload.position,
+             points_awarded: payload.points_awarded
+          })
+          .select()
+          .single();
         if (error) throw error;
         return data;
       }
