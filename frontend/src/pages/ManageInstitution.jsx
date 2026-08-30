@@ -24,7 +24,7 @@ export default function ManageInstitution() {
   const fetchData = async () => {
     try {
       const data = await apiClient('/super/institutions');
-      const found = data.find(i => i.id === parseInt(id));
+      const found = data.find(i => i.id === id);
       if (found) setInstitution(found);
     } catch (err) {
       console.error(err);
