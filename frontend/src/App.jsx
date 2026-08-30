@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Teams from './pages/Teams';
 import AddResult from './pages/AddResult';
 import EditResult from './pages/EditResult';
+import ImportResults from './pages/ImportResults';
 import Results from './pages/Results';
 import Leaderboard from './pages/Leaderboard';
 import SettingsPage from './pages/Settings';
@@ -250,6 +251,7 @@ function App() {
                   <Route path="/teams" element={<Teams />} />
                   <Route path="/results/edit/:id" element={<EditResult />} />
                   <Route path="/results" element={<Results />} />
+                  <Route path="/import" element={<ImportResults />} />
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<AddResult />} />
