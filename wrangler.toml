@@ -1,6 +1,0 @@
-name = "milad-score-board"
-pages_build_output_dir = "frontend/dist"
-compatibility_date = "2026-08-27"
-
-[build]
-command = "npm --prefix frontend run build"
