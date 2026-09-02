@@ -93,7 +93,7 @@ export default function ManageInstitution() {
     }
   };
 
-  const handleEditSubmit = async (e) => {
+    const handleEditSubmit = async (e) => {
     e.preventDefault();
     setSavingEdit(true);
     try {
@@ -107,12 +107,23 @@ export default function ManageInstitution() {
         logoUrl = publicUrl;
       }
       
+      let bannerUrl = editForm.banner_url;
+      if (editBannerFile) {
+        const fileExt = editBannerFile.name.split('.').pop();
+        const fileName = `${editForm.code}-banner-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('logos').upload(fileName, editBannerFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName);
+        bannerUrl = publicUrl;
+      }
+      
       await apiClient(`/super/institutions/${id}/edit`, {
         method: 'PUT',
-        body: JSON.stringify({ ...editForm, logo_url: logoUrl, public_slug: editForm.code.toLowerCase() })
+        body: JSON.stringify({ ...editForm, logo_url: logoUrl, banner_url: bannerUrl, public_slug: editForm.code.toLowerCase() })
       });
       setIsEditing(false);
       setEditLogoFile(null);
+      setEditBannerFile(null);
       fetchData();
     } catch (err) {
       alert(err.message);
