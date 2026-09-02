@@ -352,6 +352,7 @@ export const apiClient = async (endpoint, options = {}) => {
              place: body.place,
              public_slug: body.public_slug,
              logo_url: body.logo_url,
+             banner_url: body.banner_url,
              theme_color_1: body.theme_color_1,
              theme_color_2: body.theme_color_2
            }).eq('id', id).select().single();

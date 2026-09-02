@@ -44,7 +44,7 @@ export default function PublicPage() {
       try {
         const { data: inst, error: instErr } = await supabase
           .from('institutions')
-          .select('id, name, place, public_score_enabled, logo_url, theme_color_1, theme_color_2')
+          .select('id, name, place, public_score_enabled, logo_url, banner_url, theme_color_1, theme_color_2')
           .eq('public_slug', code.toLowerCase())
           .single();
 
@@ -123,6 +123,7 @@ export default function PublicPage() {
           institutionName: inst.name,
           place: inst.place,
           logo_url: inst.logo_url,
+          banner_url: inst.banner_url,
           themeColor1: inst.theme_color_1 || '#4f46e5',
           themeColor2: inst.theme_color_2 || '#312e81',
           categories: catData || [],
@@ -180,7 +181,13 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      <header ref={headerRef} className={`text-white shadow-lg fixed top-0 left-0 right-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`} style={{ background: `linear-gradient(to right, ${data.themeColor1 || '#312e81'}, ${data.themeColor2 || '#4c1d95'})` }}>
+      <header ref={headerRef} className={`text-white shadow-lg fixed top-0 left-0 right-0 z-20 transition-all duration-300 ${isScrolled ? 'py-3 px-4' : 'p-6 md:p-10'}`} style={{ 
+        background: data.banner_url 
+          ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${data.banner_url})` 
+          : `linear-gradient(to right, ${data.themeColor1 || '#312e81'}, ${data.themeColor2 || '#4c1d95'})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
         <div className={`max-w-5xl mx-auto flex justify-between items-center transition-all duration-300 ${isScrolled ? 'flex-row' : 'flex-col md:flex-row gap-6'}`}>
           <div className={`flex items-center text-left ${isScrolled ? 'gap-3' : 'flex-col md:flex-row gap-4 w-full md:w-auto text-center md:text-left'}`}>
             {data.logo_url && (
