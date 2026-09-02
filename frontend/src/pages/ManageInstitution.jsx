@@ -159,31 +159,30 @@ export default function ManageInstitution() {
             <h2 className="text-lg font-bold text-indigo-900">Edit Institution Details</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Institution Name</label>
-              <input required type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Institution Code</label>
-              <input required type="text" className="w-full border border-slate-300 rounded px-3 py-2 uppercase" value={editForm.code} onChange={e => setEditForm({...editForm, code: e.target.value.toUpperCase()})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Place / Subtitle (Optional)</label>
-              <input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={editForm.place} onChange={e => setEditForm({...editForm, place: e.target.value})} placeholder="e.g. Kozhikode" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Logo (Optional)</label>
-              <input type="file" accept="image/*" onChange={e => setEditLogoFile(e.target.files[0])} className="w-full text-sm" />
-              {editForm.logo_url && !editLogoFile && <p className="text-xs text-slate-500 mt-1">Has existing logo</p>}
-            </div>
-              <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
-                <div>
-                                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Institution Name</label>
+                <input required type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Institution Code</label>
+                <input required type="text" className="w-full border border-slate-300 rounded px-3 py-2 uppercase" value={editForm.code} onChange={e => setEditForm({...editForm, code: e.target.value.toUpperCase()})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Place / Subtitle (Optional)</label>
+                <input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={editForm.place} onChange={e => setEditForm({...editForm, place: e.target.value})} placeholder="e.g. Kozhikode" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Logo (Optional)</label>
+                <input type="file" accept="image/*" onChange={e => setEditLogoFile(e.target.files[0])} className="w-full text-sm" />
+                {editForm.logo_url && !editLogoFile && <p className="text-xs text-slate-500 mt-1">Has existing logo</p>}
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Banner Image (Optional)</label>
                 <input type="file" accept="image/*" onChange={e => setEditBannerFile(e.target.files[0])} className="w-full text-sm" />
                 {editForm.banner_url && !editBannerFile && <p className="text-xs text-slate-500 mt-1">Has existing banner</p>}
               </div>
+              <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Primary Theme Color</label>
                   <div className="flex items-center space-x-2">
                     <input type="color" className="h-10 w-10 border border-slate-300 rounded cursor-pointer" value={editForm.theme_color_1 || '#4f46e5'} onChange={e => setEditForm({...editForm, theme_color_1: e.target.value})} />
@@ -199,7 +198,7 @@ export default function ManageInstitution() {
                 </div>
               </div>
             </div>
-          <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-4">
             <button type="submit" disabled={savingEdit} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-70 flex items-center space-x-2">
               <Save size={18} /><span>{savingEdit ? 'Saving...' : 'Save Changes'}</span>
             </button>
