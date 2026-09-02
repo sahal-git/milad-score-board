@@ -178,6 +178,12 @@ export default function ManageInstitution() {
             </div>
               <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
                 <div>
+                                </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Banner Image (Optional)</label>
+                <input type="file" accept="image/*" onChange={e => setEditBannerFile(e.target.files[0])} className="w-full text-sm" />
+                {editForm.banner_url && !editBannerFile && <p className="text-xs text-slate-500 mt-1">Has existing banner</p>}
+              </div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Primary Theme Color</label>
                   <div className="flex items-center space-x-2">
                     <input type="color" className="h-10 w-10 border border-slate-300 rounded cursor-pointer" value={editForm.theme_color_1 || '#4f46e5'} onChange={e => setEditForm({...editForm, theme_color_1: e.target.value})} />
