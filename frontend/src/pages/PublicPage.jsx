@@ -123,6 +123,8 @@ export default function PublicPage() {
           institutionName: inst.name,
           place: inst.place,
           logo_url: inst.logo_url,
+          themeColor1: inst.theme_color_1 || '#4f46e5',
+          themeColor2: inst.theme_color_2 || '#312e81',
           categories: catData || [],
           leaderboard: leaderboard.sort((a, b) => b.totalPoints - a.totalPoints),
           recentResults: sortedGrouped.slice(0, 5),
