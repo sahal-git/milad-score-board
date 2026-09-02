@@ -81,8 +81,12 @@ export default function AddResult() {
       return;
     }
     
-    if (!formData.first_team_id && !formData.second_team_id && !formData.third_team_id) {
-      setError('Please select at least one team for a position.');
+    const hasFirst = formData.first_team_id || formData.first_candidate_name.trim();
+    const hasSecond = formData.second_team_id || formData.second_candidate_name.trim();
+    const hasThird = formData.third_team_id || formData.third_candidate_name.trim();
+
+    if (!hasFirst && !hasSecond && !hasThird) {
+      setError('Please fill in at least one position (team or candidate).');
       return;
     }
 
@@ -95,14 +99,14 @@ export default function AddResult() {
         scoring_category_id: formData.scoring_category_id,
       };
 
-      if (formData.first_team_id) {
-        submissions.push({ ...baseData, team_id: formData.first_team_id, candidate_name: formData.first_candidate_name.trim(), position: 1, points_awarded: currentPoints.first });
+      if (hasFirst) {
+        submissions.push({ ...baseData, team_id: formData.first_team_id || null, candidate_name: formData.first_candidate_name.trim(), position: 1, points_awarded: currentPoints.first });
       }
-      if (formData.second_team_id) {
-        submissions.push({ ...baseData, team_id: formData.second_team_id, candidate_name: formData.second_candidate_name.trim(), position: 2, points_awarded: currentPoints.second });
+      if (hasSecond) {
+        submissions.push({ ...baseData, team_id: formData.second_team_id || null, candidate_name: formData.second_candidate_name.trim(), position: 2, points_awarded: currentPoints.second });
       }
-      if (formData.third_team_id) {
-        submissions.push({ ...baseData, team_id: formData.third_team_id, candidate_name: formData.third_candidate_name.trim(), position: 3, points_awarded: currentPoints.third });
+      if (hasThird) {
+        submissions.push({ ...baseData, team_id: formData.third_team_id || null, candidate_name: formData.third_candidate_name.trim(), position: 3, points_awarded: currentPoints.third });
       }
       
       const newResults = [];
@@ -182,7 +186,7 @@ export default function AddResult() {
             value={formData[teamField]}
             onChange={e => setFormData({...formData, [teamField]: e.target.value})}
           >
-            <option value="">Select Team</option>
+            <option value="">None / No Team</option>
             {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
         </div>

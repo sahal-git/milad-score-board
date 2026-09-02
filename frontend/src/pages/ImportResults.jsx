@@ -107,8 +107,12 @@ export default function ImportResults() {
       const team2 = validateTeam(row['2nd Team'], '2nd Place');
       const team3 = validateTeam(row['3rd Team'], '3rd Place');
 
-      if (!team1 && !team2 && !team3) {
-        errors.push('At least one team must be assigned to a position (1st, 2nd, or 3rd)');
+      const hasFirst = team1 || row['1st Candidate'];
+      const hasSecond = team2 || row['2nd Candidate'];
+      const hasThird = team3 || row['3rd Candidate'];
+
+      if (!hasFirst && !hasSecond && !hasThird) {
+        errors.push('At least one position (team or candidate) must be filled.');
       }
 
       return {
@@ -151,9 +155,9 @@ export default function ImportResults() {
         programme: row.programme,
         scoring_category_id: row.scoring_category_id
       };
-      if (row.team1) submissions.push({ ...base, team_id: row.team1.id, candidate_name: row.candidate1, position: 1, points_awarded: row.first_points });
-      if (row.team2) submissions.push({ ...base, team_id: row.team2.id, candidate_name: row.candidate2, position: 2, points_awarded: row.second_points });
-      if (row.team3) submissions.push({ ...base, team_id: row.team3.id, candidate_name: row.candidate3, position: 3, points_awarded: row.third_points });
+      if (row.team1 || row.candidate1) submissions.push({ ...base, team_id: row.team1 ? row.team1.id : null, candidate_name: row.candidate1 || '', position: 1, points_awarded: row.first_points });
+      if (row.team2 || row.candidate2) submissions.push({ ...base, team_id: row.team2 ? row.team2.id : null, candidate_name: row.candidate2 || '', position: 2, points_awarded: row.second_points });
+      if (row.team3 || row.candidate3) submissions.push({ ...base, team_id: row.team3 ? row.team3.id : null, candidate_name: row.candidate3 || '', position: 3, points_awarded: row.third_points });
     });
 
     try {

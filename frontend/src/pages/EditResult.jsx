@@ -80,8 +80,8 @@ export default function EditResult() {
       setError('Programme is required');
       return;
     }
-    if (!formData.team_id) {
-      setError('Team is required');
+    if (!formData.team_id && !formData.candidate_name.trim()) {
+      setError('Please provide either a team or a candidate name.');
       return;
     }
 
