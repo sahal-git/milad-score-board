@@ -320,5 +320,5 @@ export default function ManageInstitution() {
     </div>
   );
 }
-/ /   T r i g g e r   N e t l i f y   b u i l d  
- 
+
+// Trigger build cleanly
