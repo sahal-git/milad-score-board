@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
-import { Save, Loader } from 'lucide-react';
+import { Save, Loader, Plus, Trash2 } from 'lucide-react';
 
 const PROGRAMME_CATEGORIES = [
   'kiddies', 'sub_junior', 'junior', 'senior', 'super_senior', 'general'
@@ -20,16 +20,11 @@ export default function AddResult() {
     programme_category: 'general',
     programme: '',
     scoring_category_id: '',
-    
-    first_team_id: '',
-    first_candidate_name: '',
-    
-    second_team_id: '',
-    second_candidate_name: '',
-    
-    third_team_id: '',
-    third_candidate_name: '',
   });
+
+  const [firstPlaces, setFirstPlaces] = useState([{ team_id: '', candidate_name: '' }]);
+  const [secondPlaces, setSecondPlaces] = useState([{ team_id: '', candidate_name: '' }]);
+  const [thirdPlaces, setThirdPlaces] = useState([{ team_id: '', candidate_name: '' }]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,11 +76,11 @@ export default function AddResult() {
       return;
     }
     
-    const hasFirst = formData.first_team_id || formData.first_candidate_name.trim();
-    const hasSecond = formData.second_team_id || formData.second_candidate_name.trim();
-    const hasThird = formData.third_team_id || formData.third_candidate_name.trim();
+    const validFirst = firstPlaces.filter(p => p.team_id || p.candidate_name.trim());
+    const validSecond = secondPlaces.filter(p => p.team_id || p.candidate_name.trim());
+    const validThird = thirdPlaces.filter(p => p.team_id || p.candidate_name.trim());
 
-    if (!hasFirst && !hasSecond && !hasThird) {
+    if (validFirst.length === 0 && validSecond.length === 0 && validThird.length === 0) {
       setError('Please fill in at least one position (team or candidate).');
       return;
     }
@@ -99,15 +94,15 @@ export default function AddResult() {
         scoring_category_id: formData.scoring_category_id,
       };
 
-      if (hasFirst) {
-        submissions.push({ ...baseData, team_id: formData.first_team_id || null, candidate_name: formData.first_candidate_name.trim(), position: 1, points_awarded: currentPoints.first });
-      }
-      if (hasSecond) {
-        submissions.push({ ...baseData, team_id: formData.second_team_id || null, candidate_name: formData.second_candidate_name.trim(), position: 2, points_awarded: currentPoints.second });
-      }
-      if (hasThird) {
-        submissions.push({ ...baseData, team_id: formData.third_team_id || null, candidate_name: formData.third_candidate_name.trim(), position: 3, points_awarded: currentPoints.third });
-      }
+      validFirst.forEach(p => {
+        submissions.push({ ...baseData, team_id: p.team_id || null, candidate_name: p.candidate_name.trim(), position: 1, points_awarded: currentPoints.first });
+      });
+      validSecond.forEach(p => {
+        submissions.push({ ...baseData, team_id: p.team_id || null, candidate_name: p.candidate_name.trim(), position: 2, points_awarded: currentPoints.second });
+      });
+      validThird.forEach(p => {
+        submissions.push({ ...baseData, team_id: p.team_id || null, candidate_name: p.candidate_name.trim(), position: 3, points_awarded: currentPoints.third });
+      });
       
       const newResults = [];
       for (const sub of submissions) {
@@ -130,16 +125,10 @@ export default function AddResult() {
       setSuccess(`Successfully saved ${submissions.length} result(s) for ${baseData.programme}`);
       
       // Reset logic: Clear candidates, teams, and programme, but keep categories so they can type the next programme instantly.
-      setFormData(prev => ({
-        ...prev,
-        programme: '',
-        first_team_id: '',
-        first_candidate_name: '',
-        second_team_id: '',
-        second_candidate_name: '',
-        third_team_id: '',
-        third_candidate_name: '',
-      }));
+      setFormData(prev => ({ ...prev, programme: '' }));
+      setFirstPlaces([{ team_id: '', candidate_name: '' }]);
+      setSecondPlaces([{ team_id: '', candidate_name: '' }]);
+      setThirdPlaces([{ team_id: '', candidate_name: '' }]);
       
       if (programmeInputRef.current) {
         programmeInputRef.current.focus();
@@ -165,43 +154,79 @@ export default function AddResult() {
 
   if (loading) return <div className="p-8 text-center"><Loader className="animate-spin mx-auto text-indigo-500" /></div>;
 
-  const PositionInput = ({ position, label, colorClass, badgeClass, teamField, candidateField, points }) => (
+  const PositionInputGroup = ({ position, label, colorClass, badgeClass, places, setPlaces, points }) => (
     <div className={`p-4 md:p-6 rounded-xl border ${colorClass} shadow-sm space-y-4`}>
       <div className="flex justify-between items-center border-b pb-3 mb-2" style={{ borderColor: 'inherit' }}>
         <h3 className="font-bold flex items-center space-x-2">
           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${badgeClass}`}>{position}</span>
           <span>{label}</span>
         </h3>
-        <div className="text-right">
-          <span className="text-2xl font-black">{points}</span>
-          <span className="text-xs font-bold uppercase ml-1 opacity-70">Pts</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">Team</label>
-          <select
-            className="w-full border rounded-lg px-3 py-2 outline-none bg-white/80 focus:ring-2 focus:ring-indigo-500"
-            style={{ borderColor: 'rgba(0,0,0,0.1)' }}
-            value={formData[teamField]}
-            onChange={e => setFormData({...formData, [teamField]: e.target.value})}
+        <div className="text-right flex items-center space-x-4">
+          <div>
+            <span className="text-2xl font-black">{points}</span>
+            <span className="text-xs font-bold uppercase ml-1 opacity-70">Pts</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPlaces([...places, { team_id: '', candidate_name: '' }])}
+            className="flex items-center space-x-1 text-xs font-bold px-2 py-1 rounded bg-white/50 hover:bg-white/80 transition shadow-sm"
           >
-            <option value="">None / No Team</option>
-            {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">Candidate (Optional)</label>
-          <input
-            type="text"
-            placeholder="Name..."
-            className="w-full border rounded-lg px-3 py-2 outline-none bg-white/80 focus:ring-2 focus:ring-indigo-500"
-            style={{ borderColor: 'rgba(0,0,0,0.1)' }}
-            value={formData[candidateField]}
-            onChange={e => setFormData({...formData, [candidateField]: e.target.value})}
-          />
+            <Plus size={14} /> <span>Add</span>
+          </button>
         </div>
       </div>
+      
+      {places.map((place, index) => (
+        <div key={index} className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end relative bg-white/40 p-3 rounded-lg border border-black/5">
+          <div className="lg:col-span-5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">Team</label>
+            <select
+              className="w-full border rounded-lg px-3 py-2 outline-none bg-white focus:ring-2 focus:ring-indigo-500"
+              style={{ borderColor: 'rgba(0,0,0,0.1)' }}
+              value={place.team_id}
+              onChange={e => {
+                const newPlaces = [...places];
+                newPlaces[index].team_id = e.target.value;
+                setPlaces(newPlaces);
+              }}
+            >
+              <option value="">None / No Team</option>
+              {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>
+          </div>
+          <div className="lg:col-span-6">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">Candidate (Optional)</label>
+            <input
+              type="text"
+              placeholder="Name..."
+              className="w-full border rounded-lg px-3 py-2 outline-none bg-white focus:ring-2 focus:ring-indigo-500"
+              style={{ borderColor: 'rgba(0,0,0,0.1)' }}
+              value={place.candidate_name}
+              onChange={e => {
+                const newPlaces = [...places];
+                newPlaces[index].candidate_name = e.target.value;
+                setPlaces(newPlaces);
+              }}
+            />
+          </div>
+          <div className="lg:col-span-1 flex justify-center pb-2">
+            {places.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const newPlaces = [...places];
+                  newPlaces.splice(index, 1);
+                  setPlaces(newPlaces);
+                }}
+                className="text-red-500 hover:text-red-700 p-1"
+                title="Remove"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -254,25 +279,25 @@ export default function AddResult() {
         </div>
 
         <div className="space-y-4">
-          <PositionInput 
+          <PositionInputGroup 
             position="1" label="1st Place" 
             colorClass="bg-amber-50/50 border-amber-200 text-amber-900" 
             badgeClass="bg-amber-100 border-2 border-amber-300 text-amber-800"
-            teamField="first_team_id" candidateField="first_candidate_name" 
+            places={firstPlaces} setPlaces={setFirstPlaces}
             points={currentPoints.first} 
           />
-          <PositionInput 
+          <PositionInputGroup 
             position="2" label="2nd Place" 
             colorClass="bg-slate-50/50 border-slate-200 text-slate-800" 
             badgeClass="bg-slate-200 border-2 border-slate-300 text-slate-700"
-            teamField="second_team_id" candidateField="second_candidate_name" 
+            places={secondPlaces} setPlaces={setSecondPlaces}
             points={currentPoints.second} 
           />
-          <PositionInput 
+          <PositionInputGroup 
             position="3" label="3rd Place" 
             colorClass="bg-orange-50/50 border-orange-200 text-orange-900" 
             badgeClass="bg-orange-100 border-2 border-orange-300 text-orange-800"
-            teamField="third_team_id" candidateField="third_candidate_name" 
+            places={thirdPlaces} setPlaces={setThirdPlaces}
             points={currentPoints.third} 
           />
         </div>
@@ -339,3 +364,4 @@ export default function AddResult() {
     </div>
   );
 }
+
