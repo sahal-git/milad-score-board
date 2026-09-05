@@ -316,7 +316,7 @@ export default function PublicPage() {
                             </div>
                           </div>
                           <p className="text-sm text-slate-600 mt-1">
-                            <span className="font-medium text-amber-600">1st:</span> {result.first_team} ({result.first_points} pts)
+                            <span className="font-medium text-amber-600">1st:</span> {result.first_candidate || '-'} {result.first_team ? `(${result.first_team}) ` : ''}({result.first_points} pts)
                           </p>
                         </div>
                       ))}
@@ -371,33 +371,33 @@ export default function PublicPage() {
                       </div>
                     </div>
                     <div className="p-5 space-y-4">
-                      {result.first_team && (
-                        <div className="flex items-center space-x-3">
-                          <div className="shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm border border-amber-200 shadow-sm">1</div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-800 text-sm truncate">{result.first_candidate || '-'}</p>
-                            <p className="text-xs font-semibold text-amber-600 truncate">{result.first_team} ({result.first_points} pts)</p>
+                      {(result.first_candidate || result.first_team) && (
+                          <div className="flex items-center space-x-3">
+                            <div className="shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm border border-amber-200 shadow-sm">1</div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-slate-800 text-sm truncate">{result.first_candidate || '-'}</p>
+                              <p className="text-xs font-semibold text-amber-600 truncate">{result.first_team ? `${result.first_team} - ` : ''}{result.first_points} pts</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {result.second_team && (
-                        <div className="flex items-center space-x-3">
-                          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm border border-slate-200 shadow-sm">2</div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-800 text-sm truncate">{result.second_candidate || '-'}</p>
-                            <p className="text-xs font-semibold text-slate-500 truncate">{result.second_team} ({result.second_points} pts)</p>
+                        )}
+                      {(result.second_candidate || result.second_team) && (
+                          <div className="flex items-center space-x-3">
+                            <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm border border-slate-200 shadow-sm">2</div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-slate-800 text-sm truncate">{result.second_candidate || '-'}</p>
+                              <p className="text-xs font-semibold text-slate-500 truncate">{result.second_team ? `${result.second_team} - ` : ''}{result.second_points} pts</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {result.third_team && (
-                        <div className="flex items-center space-x-3">
-                          <div className="shrink-0 w-8 h-8 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center font-bold text-sm border border-orange-200 shadow-sm">3</div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-800 text-sm truncate">{result.third_candidate || '-'}</p>
-                            <p className="text-xs font-semibold text-orange-600 truncate">{result.third_team} ({result.third_points} pts)</p>
+                        )}
+                      {(result.third_candidate || result.third_team) && (
+                          <div className="flex items-center space-x-3">
+                            <div className="shrink-0 w-8 h-8 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center font-bold text-sm border border-orange-200 shadow-sm">3</div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-slate-800 text-sm truncate">{result.third_candidate || '-'}</p>
+                              <p className="text-xs font-semibold text-orange-600 truncate">{result.third_team ? `${result.third_team} - ` : ''}{result.third_points} pts</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </div>
                 ))}
